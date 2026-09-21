@@ -146,10 +146,10 @@ _spotter_main_config(){
 		_sprint_message "Error, running with sudo is not allowed."
 		return 1
 	elif [ "${mode}" = "update" ]; then
-		${src}/updater.sh --install-latest || return ${?}
+		${src}/modules/updater.sh --install-latest || return ${?}
 		return 0
-	elif [ -s "${src}/updater.sh" ]; then
-		${src}/updater.sh --update-install
+	elif [ -s "${src}/modules/updater.sh" ]; then
+		${src}/modules/updater.sh --update-install && return 0
 	fi
 
 	# logs

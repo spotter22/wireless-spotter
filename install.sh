@@ -3,11 +3,9 @@
 
 						_process_storage()
 										{
-											if [ -z "${spotter_root}" ]; then
-												spotter_root="/data/data/com.termux/files/home/wspot-root"
-											else
-												spotter_root="${spotter_root}"
-											fi
+											spotter_root="${spotter_root:-/data/data/com.termux/files/home/wspot-root}"
+											[ -z "${1}" ] || return 0
+
 												mkdir -p "${spotter_root}/tmp"
 											if [ ! -w "${spotter_root}" ]; then
 												echo "Error: can not write into: ${spotter_root}"
@@ -236,9 +234,10 @@
 		_process_storage || exit 1
 		_process_ufetch "--silent" || exit 1
 	elif [ "${1}" = "--update-install" ]; then
+		_process_storage "--silent" || exit 1
 		_process_ucheck || exit 1
-		_process_storage || exit 1
-		_process_uinstall "--silent" || exit 1
+		_process_uinstall "--silent"
+		return 0
 	elif [ "${1}" = "--install-latest" ]; then
 		_process_storage || exit 1
 		_process_ufetch "--install" || exit 1
