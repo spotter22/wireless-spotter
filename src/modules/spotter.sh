@@ -34,6 +34,11 @@ _spotter_get_gid_state()
 	cat "${db_root}/${1}.${2}" | sort -R
 }
 
+_spotter_return_gid_status(){
+	_spotter_get_config || return ${?}
+	[ -s "${db_root}/${1//:/}.gid" ] && return 0 || return 1
+}
+
 
 _spotter_put_gid_state()
 {

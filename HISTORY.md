@@ -1,3 +1,7 @@
+- wspot v1.0.1 changelog:
+1. [installer] added restore legacy database.
+2. [installer] fixed a issue on ufetch function.
+3. [wspot] some fixes and improvements.
 - wspot v1.0.0 changelog:
 1. First stable release.
 

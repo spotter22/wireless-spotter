@@ -54,7 +54,7 @@ _database_merger_save()
 	mkdir -p "${spotter_root}/tmp/share"
 
 		file="wspot-db-$(date +%s).zip"
-		tar -J --xz -cf "${spotter_root}/tmp/share/${file}" -C "${spotter_root}/database" .
+		tar --xz -cf "${spotter_root}/tmp/share/${file}" -C "${spotter_root}/database" .
 	if [ "${option}" = "--backup" ]; then
 		echo "backing-up into: ${output}/${file}"
 		cp "${spotter_root}/tmp/share/${file}" "${output}/${file}"

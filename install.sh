@@ -110,6 +110,17 @@
 												"${spotter_root}/modules/reporter.sh" \
 												"${spotter_root}/modules/cepter-ng.sh" || exit 1
 
+												home=$(realpath ~)
+												prev_home="${prev_home:-${home}/wifi-spotter-root}"
+											if [ -s "${prev_home}/wsdb/.id" ]; then
+												echo "found compatible legacy database.."
+												stamp=$(date +%s)
+												tar --xz -cf "${spotter_root}/tmp/legacy-db-${stamp}.xz" -C "${prev_home}/wsdb/" .
+												rm -rf "${prev_home}/wsdb/.id"
+												source "${spotter_root}/modules/merge-database.sh"
+												_database_merger_find "${spotter_root}/tmp/legacy-db-${stamp}.xz"
+											fi
+
 											echo "making link to wireless-spotter.sh..."
 											ln -fs "${spotter_root}/wireless-spotter.sh" "${PREFIX}/bin/wspot"
 
@@ -125,6 +136,7 @@
 													link_main="https://raw.githubusercontent.com/spotter22/wireless-spotter/refs/heads/main/LATEST"
 													link_alt="https://github.com/spotter22/wireless-spotter/releases/download/LATEST/LATEST"
 													link_update="https://github.com/spotter22/wireless-spotter/releases/download/LATEST/UPDATE"
+													mkdir -p "${spotter_root}/tmp/updates/"
 
 												if [ ! -s "${spotter_root}/.version" ] && [ "${1}" = "--silent" ]; then
 													echo "Use instead: --install-latest"

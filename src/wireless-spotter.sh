@@ -46,10 +46,10 @@ Main options:
   Advance options, target, reset or keep Wi-Fi.
    Options:
     set-addr = Set assigned MAC address
-    and reconnect-wifi. Must add equals symbol
-    right after set-addr option. The assignable
-    value must be <string> and matches either
-    <random> or <AB:CD:EF:12:34:56>.
+     and reconnect-wifi. Must add equals symbol
+     right after set-addr option. The assignable
+     value must be <string> and matches either
+     <random> or <AB:CD:EF:12:34:56>.
 
     auto-macsposed = Helps to prevent power saver
      from killing MACSposed by disabling it.
@@ -110,7 +110,7 @@ _notify_message(){
 }
 
 _spotter_main_config(){
-	local version commit mode option src x p
+	local version commit mode option src err x p
 	[ -n "${spotter_root}" ] && { readonly spotter_root="${spotter_root}"; } || { readonly spotter_root=~/wspot-root; }; mkdir -p "${spotter_root}/tmp" || return ${?}
 	[ "${mdebug}" = "1" ] && src="./src" || src="${spotter_root}"
 	[ -n "${iface}" ] || iface="wlan0"
@@ -171,7 +171,7 @@ _spotter_main_config(){
 		_sprint_message "not implemented yet"
 	elif [ "${mode}" = "scan" ]; then
 		_spotter_main_getwifi "scan-select" || return ${?}
-		_spotter_main_getinfo || return ${?}
+		_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] || return ${err}; }
 		_spotter_main_scanwifi "${option}" || return ${?}
 	elif [ "${mode}" = "exploit" ]; then
 		_spotter_main_exploit "${option}"
@@ -259,7 +259,7 @@ _spotter_main_targetwifi(){
 		return 1
 	fi
 
-		i=0
+		i=1
 	while true; do
 			[ ${option} -eq 2 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi that matches: ${target}\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			[ ${option} -eq 1 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi with free internet access..\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
@@ -268,6 +268,7 @@ _spotter_main_targetwifi(){
 		for x in ${array_index[@]}; do
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }
+			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
 			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ "${target,,}" ]] || [ "${bssid}" = "${target}" ]) && { _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message; return 0; }; continue; }
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "${ssid}" || return ${?}; done
