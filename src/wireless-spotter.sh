@@ -98,14 +98,18 @@ _speak_message(){
 }
 
 _notify_message(){
-	play-audio "${spotter_root}/sfx/notification_done.m4a" &
+	if [ "${1}" = "failed" ]; then
+		play-audio "${spotter_root}/sfx/notification_error.m4a" &
+	elif [[ "${1}" =~ (completed|checkmate|dominate|empty) ]]; then
+		play-audio "${spotter_root}/sfx/notification_done.m4a" &
 
-	if [ "${1}" = "checkmate" ]; then
-		{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition2.m4a"; } &
-	elif [ "${1}" = "dominate" ]; then
-		{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition1.m4a"; } &
-	elif [ "${1}" = "empty" ]; then
-		{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition0.m4a"; } &
+		if [ "${1}" = "checkmate" ]; then
+			{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition2.m4a"; } &
+		elif [ "${1}" = "dominate" ]; then
+			{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition1.m4a"; } &
+		elif [ "${1}" = "empty" ]; then
+			{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition0.m4a"; } &
+		fi
 	fi
 }
 
@@ -264,15 +268,16 @@ _spotter_main_targetwifi(){
 			[ ${option} -eq 2 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi that matches: ${target}\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			[ ${option} -eq 1 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi with free internet access..\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			_spotter_main_getwifi "scan-parse"; err=${?}
-			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && return 1 || { sleep 0.5; continue; }; }
+			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; }
 		for x in ${array_index[@]}; do
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }
 			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
-			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ "${target,,}" ]] || [ "${bssid}" = "${target}" ]) && { _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message; return 0; }; continue; }
+			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ "${target,,}" ]] || [ "${bssid}" = "${target}" ]) && { _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "completed"; return 0; }; continue; }
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
-			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "${ssid}" || return ${?}; done
-			_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message; return 0; }; continue; }
+			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "signal strength is ${sig}%... get closer to... ${ssid}" || { err=${?}; _notify_message "failed"; return ${err}; }; done
+			[ ${err} -eq 12 ] && continue
+			_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "completed"; return 0; }; continue; }
 			_spotter_main_scanwifi "3" "0" || continue
 			list+=" ${bssid}"
 		done
@@ -333,13 +338,14 @@ _spotter_main_spotwifi(){
 	while true; do
 			([ ${i} -eq ${option} ] && [ ${option} -eq 1 ]) && return 0
 			_spotter_main_getwifi "scan-parse"; err=${?}
-			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && return 1 || { sleep 0.5; continue; }; }
+			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; }
 			_sprint_message "--------------------------------------------------\nSession: ${i} | Time: $(date "+%c")\n--------------------------------------------------"
 		for x in ${array_index[@]}; do
-			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
+			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"; sig="${array_sig[${x}]}"
 			[ ${option} -eq 2 ] && (_spotter_get_bssid_rate "${bssid}" >/dev/null || [[ "${list}" =~ "${bssid}" ]]) && { _sprint_message "Skipping: ${ssid}"; continue; }
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
-			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "${ssid}" || return ${?}; done
+			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "signal strength is ${sig}%... get closer to... ${ssid}" || { err=${?}; _notify_message "failed"; return ${err}; }; done
+			[ ${err} -eq 12 ] && continue
 			_spotter_main_getinfo || continue
 			_spotter_main_scanwifi "3" "0" || continue
 			list+=" ${bssid}"

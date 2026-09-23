@@ -20,13 +20,25 @@ _iproute2iw_parse_auto()
 		stdin="eval su -c 'iw dev '${iface}' link; iw dev '${iface}' info; ip r show table all; ip n'"
 	fi
 
+	_optimize_ssid(){
+		ret=0
+		local ssid; ssid="${1}"
+		_print_verbose "_optimize_ssid: optimizing ssid: ${ssid}"
+		ssid="${ssid//\"/\&qout;}"
+		ssid="${ssid//\'/\&sqout;}"
+		ssid="${ssid//\\/\&bslash;}"
+		_print_verbose "_optimize_ssid: optimizing finished: ${ssid}"
+		ret="${ssid}"
+		return 0
+	}
+
 		i=0; rskip=0; nskip=0; tskip=0
 		_print_message "Getting network information.."
 	while read -r x; do
 		if [[ "${x}" =~ (Connected to [a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2} \(on) ]]; then
 			# iw scan dev wlan0 link
 			arr=(${x}); iwbssid="${arr[2]}"; n="${arr[4]/)/}"; iwface="${n}"
-			read -r x; [[ "${x}" =~ "SSID:" ]] && iwssid=$(echo -e "${x}" | sed "s/SSID: //") || { echo "error expected: \"SSID:\" but got: \"${x}\""; return 1; }
+			read -r x; [[ "${x}" =~ "SSID:" ]] && { iwssid=$(echo -e "${x}" | sed "s/SSID: //"); _optimize_ssid "${iwssid}"; iwssid="${ret}"; } || { echo "error expected: \"SSID:\" but got: \"${x}\""; return 1; }
 			read -r x; [[ "${x}" =~ "freq:" ]] && { arr=(${x}); iwfreq="${arr[1]}"; } || { until [[ "${x}" =~ "freq:" ]]; do read -r x; done; arr=(${x}); iwfreq="${arr[1]}"; }
 			read -r x; read -r x; read -r x; read -r x; read -r x; continue
 		elif [[ "${x}" =~ (Interface [a-z0-9]{4,8}[0-9]$) ]]; then
@@ -34,7 +46,7 @@ _iproute2iw_parse_auto()
 			arr=(${x}); iwface="${arr[1]}"
 			read -r x; read -r x; read -r x
 			arr=(${x}); iwaddr="${arr[1]}"
-			read -r x; [[ "${x}" =~ "ssid " ]] && iwssid=$(echo -e "${x}" | sed "s/ssid //")
+			read -r x; [[ "${x}" =~ "ssid " ]] && { iwssid=$(echo -e "${x}" | sed "s/ssid //"); _optimize_ssid "${iwssid}"; iwssid="${ret}"; }
 			read -r x; read -r x; continue
 		elif [[ "${x}" =~ (^phy#[0-9]$) ]]; then
 			# iw dev
@@ -44,7 +56,7 @@ _iproute2iw_parse_auto()
 			arr=(${x}); iwface[${i}]="${arr[1]}"
 			read -r x; read -r x; read -r x
 			arr=(${x}); iwaddr[${i}]="${arr[1]}"
-			read -r x; [[ "${x}" =~ "ssid " ]] && { iwssid[${i}]=$(echo -e "${x}" | sed "s/ssid //"); read -r x; }
+			read -r x; [[ "${x}" =~ "ssid " ]] && { iwssid[${i}]=$(echo -e "${x}" | sed "s/ssid //"); _optimize_ssid "${iwssid[${i}]}"; iwssid[${i}]="${ret}"; read -r x; }
 			i=$((i+1)); read -r x; continue
 			done
 			continue

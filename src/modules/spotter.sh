@@ -30,8 +30,13 @@ _spotter_get_config(){
 
 _spotter_get_gid_state()
 {
+	local list x
 	_spotter_get_config || return ${?}
-	cat "${db_root}/${1}.${2}" | sort -R
+	for x in ${@:2}; do
+		[ -s "${db_root}/${1}.${x}" ] && list+=" ${db_root}/${1}.${x}"
+	done
+
+	[ -n "${list}" ] && { cat ${list} | sort -R; } || return 1
 }
 
 _spotter_return_gid_status(){
