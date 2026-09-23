@@ -38,9 +38,10 @@ Main options:
 -d <string>
   Backup, restore or share your database.
    Options:
-     backup = backup database
-     restore = restore database
-     share = share database
+    measure = measure database
+    backup = backup database
+    restore = restore database
+    share = share database
 
 -a <string>
   Advance options, target, reset or keep Wi-Fi.
@@ -194,7 +195,10 @@ _spotter_main_config(){
 _spotter_main_optdb(){
 	local option; option="${1}"; option="${option:0:1}"; option="${option,,}"
 
-	if [ "${option}" = "b" ]; then
+	if [ "${option}" = "m" ]; then
+		_spotter_return_db_measure
+		_sprint_message "Networks: ${ret[0]}\nUsers: ${ret[1]}\nInactive: ${ret[2]}\nReserved: ${ret[3]}"
+	elif [ "${option}" = "b" ]; then
 		_database_merger_save "--backup"
 	elif [ "${option}" = "r" ]; then
 		_database_merger_find "/sdcard/Download"
@@ -366,7 +370,7 @@ _spotter_main_getwifi(){
 
 _spotter_main_getinfo(){
 	_iproute2iw_parse_auto "${iface}" || return ${?}
-	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/response.log" || { return ${?}; }; }
+	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/response.log"; err=${?}; [ ${err} -eq 0 ] && return ${err} || return ${err}; }
 	_spotter_put_bssid_info "${iwbssid}" "${iwssid}" "${iwfreq}" "${sec}" "${gateip}" "${gaddr}" "${route}" "${gid}" "${domain}" "${host}" "${port}" "${status}" "$(date +%m%d%y)"
 	_spotter_put_gid_state "${gid}" "state2" "${gaddr}"
 }

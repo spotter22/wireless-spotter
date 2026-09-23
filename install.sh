@@ -176,10 +176,8 @@
 													link="https://github.com/spotter22/wireless-spotter/releases/download"
 													filename="wireless-spotter-${latest}.tar.gz"
 													while true; do
-														if [ ! -s "${spotter_root}/tmp/updates/UPDATE" ]; then
-															echo "getting changelog file..."
-															curl -sL "${link_update}" -o "${spotter_root}/tmp/updates/UPDATE" || { rm "${spotter_root}/tmp/updates/UPDATE"; continue; }
-														fi
+														echo "getting changelog file..."
+														curl -sL "${link_update}" -o "${spotter_root}/tmp/updates/UPDATE" || { rm "${spotter_root}/tmp/updates/UPDATE"; continue; }
 														echo "downloading latest wireless-spotter package..."
 														curl -sL "${link}/${latest}/${filename}" -o "${spotter_root}/tmp/updates/${filename}" || continue
 														tar -tf "${spotter_root}/tmp/updates/${filename}" >/dev/null && \

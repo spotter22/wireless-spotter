@@ -1,3 +1,6 @@
+- wspot v1.0.4 changelog:
+1. [wspot:] fixed return code of getinfo function.
+2. [installer:] fixed latest changelog view on updates. 
 - wspot v1.0.3 changelog:
 1. [exploit-1:] fixed issues with preparing stage.
 2. [exploit-1:] improved error detection.
