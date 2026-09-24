@@ -103,6 +103,7 @@ _connection_interface_iwscan(){
 
 	_iwscan_select(){
 		unset array_index array_ssid array_addr array_freq array_sig array_sec
+		unset list
 		local twpa2 twpa twep IFS arr i n
 		local ssid freq sig index
 		_print_verbose "_connection_interface_iwscan: parsing arrays.."

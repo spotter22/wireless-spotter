@@ -1,3 +1,8 @@
+- wspot v1.0.6 changelog:
+1. [wspot:] enhanced macsposed option.
+2. [connection-status:] fixed issue with iwselect.
+3. [exploit-1:] fixed json status page parser.'
+4. [exploit-1:] fixed index error message.
 - wspot v1.0.5 changelog:
 1. [wspot:] fix-2 return code of getinfo function.
 2. [exploit-1:] some improvements to increase success rate.

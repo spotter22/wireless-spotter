@@ -9,7 +9,7 @@ _iproute2iw_parse_auto()
 	route=0; riface=0; devip=0; tgateip=0 # ip r
 	gateip=0; niface=0; gaddr=0 # ip n
 	iwface=0; iwaddr=0; iwssid=0; iwbssid=0; iwfreq=0
-	local iface prefix i x arr stdin rskip nskip tskip table IFS
+	local iface prefix i x arr stdin rskip nskip tskip table IFS ret
 	if [ -p /dev/stdin ]; then
 		stdin="cat"
 	elif [ -s "${1}" ]; then

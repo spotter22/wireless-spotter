@@ -119,6 +119,11 @@
 												_database_merger_find "${spotter_root}/tmp/legacy-db-${stamp}.xz"
 											fi
 
+											if [ -s "${prev_home}/logs/_init_macsposed_disabled.log" ]; then
+												${spotter_root}/wireless-spotter.sh -a macsposed="enable"
+												rm -f "${prev_home}/logs/_init_macsposed_disabled.log"
+											fi
+
 											echo "making link to wireless-spotter.sh..."
 											ln -fs "${spotter_root}/wireless-spotter.sh" "${PREFIX}/bin/wspot"
 

@@ -52,12 +52,16 @@ Main options:
      value must be <string> and matches either
      <random> or <AB:CD:EF:12:34:56>.
 
-    auto-macsposed = Helps to prevent power saver
+    macsposed = Helps to prevent power saver
      from killing MACSposed by disabling it.
      If any error occurred during checks MACSposed
      will be enabled again. This option requires
      device to be connected into any Wi-Fi network
      for performing tests otherwise it's will fail.
+     Must add equals symbol right after option
+     macsposed, the assignable value must be
+     "auto", or either "enable" or "disable".
+     e.g macsposed="enable".
 
     select-wifi = List available Wi-Fi networks and
      connect into seleted one.
@@ -213,16 +217,23 @@ _spotter_main_optdb(){
 
 
 _spotter_main_optadvance(){
-	local option err x i; option="${1}"
+	local option paddr err x i; option="${1}"
 
 	if [[ "${option}" =~ "set-addr" ]]; then
 		[[ "${option,,}" =~ (set-addr=r) ]] && option="--random" || option="${option/set-addr=/}"
 		_connection_interface_reconnect "1" "${spotter_root}/tmp/disconnect.state" "${spotter_root}/tmp/setaddr.state" "${option}"
-	elif [[ "${option}" =~ "auto-macsposed" ]]; then
-		_connection_interface_reconnect "1" "${spotter_root}/tmp/disconnect.state" "${spotter_root}/tmp/setaddr.state" "--random"; err=${?}
-		([ ${err} -eq 4 ] || [ ${err} -eq 11 ]) && { _sprint_message "Failed, status code is ${err}"; return ${err}; }
-		_iproute2iw_parse_auto "${iface}" || return ${?}
-		[ "${ret}" = "${iwaddr}" ] && sudo pm disable "com.berdik.macsposed" || { sudo pm enable "com.berdik.macsposed"; }
+	elif [[ "${option,,}" =~ "macsposed" ]]; then
+			option="${option/macsposed=/}"; option="${option,,}"
+		if [ "${option}" = "enable" ]; then
+			sudo pm enable "com.berdik.macsposed"
+		elif [ "${option}" = "disable" ]; then
+			sudo pm disable "com.berdik.macsposed"
+		elif [ "${option}" = "auto" ]; then
+			_connection_interface_reconnect "1" "${spotter_root}/tmp/disconnect.state" "${spotter_root}/tmp/setaddr.state" "--random"; err=${?}; paddr="${ret}"
+			([ ${err} -eq 4 ] || [ ${err} -eq 11 ]) && { _sprint_message "Failed, status code is ${err}"; return ${err}; }
+			_iproute2iw_parse_auto "${iface}" || return ${?}
+			[ "${paddr}" = "${iwaddr}" ] && sudo pm disable "com.berdik.macsposed" || sudo pm enable "com.berdik.macsposed"
+		fi
 	elif [[ "${option}" =~ "select-wifi" ]]; then
 		_spotter_main_getwifi "scan-select" || return ${?}
 	elif [ "${option}" = "reconnect-wifi" ]; then
@@ -232,7 +243,7 @@ _spotter_main_optadvance(){
 	elif [[ "${option}" =~ "target-wifi" ]]; then
 		_spotter_main_targetwifi "${option}"
 	elif [ "${option}" = "reset-wifi" ]; then
-		_connection_interface_reset "1" "${src}/modules/hostname-spoofer.sh"
+		_connection_interface_reset "2" "${src}/modules/hostname-spoofer.sh"
 	elif [ "${option}" = "keep-selected-wifi" ]; then
 		_spotter_main_getwifi "scan-select" || return ${?}
 		_iproute2iw_parse_auto "${iface}" || return ${?}
