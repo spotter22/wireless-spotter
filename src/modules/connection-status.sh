@@ -461,7 +461,11 @@ _connection_interface_state(){
 
 _connection_interface_reset()
 {
-	su -c 'local list i x y z; for x in $(echo "pm list packages" | su - | grep -F "captiveportallogin" | sed "s/package://g" | tr "\n" " "); do echo "clearing: ${x}"; echo "pm clear ${x}" | su - >/dev/null 2>&1 || echo "failed clearing: ${x}"; done; i=0; list="$(echo "cmd wifi list-networks" | su - | grep -F "open" | awk '\''{print $1}'\'' | tr "\n" " ") EOF"; for x in ${list}; do i=$((i+1)); [ "${x}" != "EOF" ] && { y+=" ${x}"; z+="cmd wifi forget-network ${x}; "; }; ([ ${i} -ge 10 ] || [ "${x}" = "EOF" ]) && { [ -z "${y}" ] && continue; echo "removing networks: ${y}"; unset y; i=0; echo "${z}" | su - >/dev/null; } || { continue; }; done'
+	local option props
+	[ -n "${1}" ] && option="${1}" || option="2"
+	[ -s "${2}" ] && props=$(realpath "${2}") || props="0"
+
+	su -c 'local list i x y z; for x in $(echo "pm list packages" | su - | grep -F "captiveportallogin" | sed "s/package://g" | tr "\n" " "); do echo "Clearing cookies: ${x}"; echo "pm clear ${x}" | su - >/dev/null 2>&1 || echo "Failed, clearing cookies: ${x}"; done; [ -s '${props}' ] && { '${props}' >/dev/null; echo "Props-Spoofer: ${?}"; }; [ '${option}' = "1" ] && exit 0; i=0; list="$(echo "cmd wifi list-networks" | su - | grep -F "open" | awk '\''{print $1}'\'' | tr "\n" " ") EOF"; for x in ${list}; do i=$((i+1)); [ "${x}" != "EOF" ] && { y+=" ${x}"; z+="cmd wifi forget-network ${x}; "; }; ([ ${i} -ge 10 ] || [ "${x}" = "EOF" ]) && { [ -z "${y}" ] && continue; echo "Removing networks: ${y}"; unset y; i=0; echo "${z}" | su - >/dev/null; } || { continue; }; done'
 }
 
 

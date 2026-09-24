@@ -72,7 +72,9 @@ Main options:
      until target Wi-Fi is found. Must add equals
      symbol after target-wifi option. The assignable
      value must be <string> and matches either
-     <Network name> or <BSSID>.
+     <Network name> or <BSSID>. For extended
+     match a comma symbol must be used as separator
+     e.g: target-wifi="<Network name>,<Network name>"
 
     reset-wifi = Reset Wi-Fi interface by removing
      saved networks with open security and removing
@@ -95,12 +97,14 @@ _sprint_message(){
 }
 
 _speak_message(){
-	espeak -s110 "${@//[$'📶📡🚀']/}"
+	echo "${@}" | sed "s/[📶📡🚀]//g; s/NET/Net/g" | espeak -s110
 }
 
 _notify_message(){
 	if [ "${1}" = "failed" ]; then
 		play-audio "${spotter_root}/sfx/notification_error.m4a" &
+	elif [ "${1}" = "found" ]; then
+		play-audio "${spotter_root}/sfx/notification_found.m4a" &
 	elif [[ "${1}" =~ (completed|checkmate|dominate|empty) ]]; then
 		play-audio "${spotter_root}/sfx/notification_done.m4a" &
 
@@ -228,7 +232,7 @@ _spotter_main_optadvance(){
 	elif [[ "${option}" =~ "target-wifi" ]]; then
 		_spotter_main_targetwifi "${option}"
 	elif [ "${option}" = "reset-wifi" ]; then
-		_connection_interface_reset
+		_connection_interface_reset "1" "${src}/modules/hostname-spoofer.sh"
 	elif [ "${option}" = "keep-selected-wifi" ]; then
 		_spotter_main_getwifi "scan-select" || return ${?}
 		_iproute2iw_parse_auto "${iface}" || return ${?}
@@ -254,35 +258,40 @@ _spotter_main_optadvance(){
 
 
 _spotter_main_targetwifi(){
-	local option target list err x i; option="${1}"
+	local target_index target option list err x i; option="${1}"
 
 	if [ "${option}" = "target-open-wifi" ]; then
 		option=1
 	elif [[ "${option}" =~ "target-wifi" ]]; then
 		[ "${option}" = "target-wifi" ] && { _sprint_message "Error, incorrect syntax you passed \"target-wifi\" but correct syntax is \"target-wifi=STRING\""; return 1; }
-		target="${option/target-wifi=/}"
-		[ -n "${target}" ] || { _sprint_message "Error, invalid value you passed \"target-wifi=NULL\" but correct option is \"target-wifi=STRING\""; return 1; }
-		option=2
+		[ -n "${option/target-wifi=/}" ] || { _sprint_message "Error, invalid value you passed \"target-wifi=NULL\" but correct option is \"target-wifi=STRING\""; return 1; }
+		list="${option/target-wifi=/}"
+			target_index=0; option=2
+		for x in ${list//,/ }; do
+			target_index=$((target_index+1))
+			[ ${target_index} -eq 1 ] && target="${x}" || target="${target}|${x}"
+		done
 	else
 		return 1
 	fi
 
 		i=1
 	while true; do
-			[ ${option} -eq 2 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi that matches: ${target}\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
+			[ ${option} -eq 2 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi that matches..\nMatch string: ${target}\nRemaining matches: ${target_index}\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			[ ${option} -eq 1 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi with free internet access..\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			_spotter_main_getwifi "scan-parse"; err=${?}
 			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; }
 		for x in ${array_index[@]}; do
-			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
+			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"; sig="${array_sig[${x}]}"
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }
 			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
-			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ "${target,,}" ]] || [ "${bssid}" = "${target}" ]) && { _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "completed"; return 0; }; continue; }
+			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ ${target,,} ]] || [[ "${bssid,,}" = ${target,,} ]]) && { target_index=$((target_index-1)); _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "found"; } || continue; }
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
-			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "signal strength is ${sig}%... get closer to... ${ssid}" || { err=${?}; _notify_message "failed"; return ${err}; }; done
+			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && { _speak_message "Cannot connect into network... get closer to... ${ssid}"; } || { err=${?}; _notify_message "failed"; return ${err}; }; done
 			[ ${err} -eq 12 ] && continue
-			_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "completed"; return 0; }; continue; }
-			_spotter_main_scanwifi "3" "0" || continue
+			_spotter_main_getinfo || { err=${?}; [ ${option} -eq 2 ] && { _notify_message "failed"; [ ${target_index} -ne 0 ] && continue || return 1; }; ([ ${option} -eq 1 ] && [ ${err} -eq 4 ]) && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "completed"; return 0; } || continue; }
+			_spotter_main_scanwifi "3" "0"
+			([ ${option} -eq 2 ] && [ ${target_index} -eq 0 ]) && return 0
 			list+=" ${bssid}"
 		done
 		sleep 3
@@ -348,7 +357,7 @@ _spotter_main_spotwifi(){
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"; sig="${array_sig[${x}]}"
 			[ ${option} -eq 2 ] && (_spotter_get_bssid_rate "${bssid}" >/dev/null || [[ "${list}" =~ "${bssid}" ]]) && { _sprint_message "Skipping: ${ssid}"; continue; }
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
-			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && _speak_message "signal strength is ${sig}%... get closer to... ${ssid}" || { err=${?}; _notify_message "failed"; return ${err}; }; done
+			until _connection_interface_connect "${ssid}" "${sec}" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}" && break; }; do _connection_interface_state "status" && { _speak_message "Cannot connect into network... get closer to... ${ssid}"; } || { err=${?}; _notify_message "failed"; return ${err}; }; done
 			[ ${err} -eq 12 ] && continue
 			_spotter_main_getinfo || continue
 			_spotter_main_scanwifi "3" "0" || continue
@@ -370,9 +379,10 @@ _spotter_main_getwifi(){
 
 _spotter_main_getinfo(){
 	_iproute2iw_parse_auto "${iface}" || return ${?}
-	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/response.log"; err=${?}; [ ${err} -eq 0 ] && return ${err} || return ${err}; }
+	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/response.log"; err=${?}; [ ${err} -eq 0 ] || return ${err}; }
 	_spotter_put_bssid_info "${iwbssid}" "${iwssid}" "${iwfreq}" "${sec}" "${gateip}" "${gaddr}" "${route}" "${gid}" "${domain}" "${host}" "${port}" "${status}" "$(date +%m%d%y)"
 	_spotter_put_gid_state "${gid}" "state2" "${gaddr}"
+	return 0
 }
 
 

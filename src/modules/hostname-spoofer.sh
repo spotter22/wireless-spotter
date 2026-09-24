@@ -6,12 +6,12 @@ _spoofer_get_prop(){
 	model=0; release=0; build=0; UA=0
 	local i props
 
-	echo "getting valid props..."
+	echo "getting valid props..." | tee -a "${logfile}"
 	UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36"
 
 	if [ "$(shuf -e "test")" != "test" ]; then
 		unset mode release build
-		echo "error: can not execute shuf utility."
+		echo "error: can not execute shuf utility." | tee -a "${logfile}"
 		return 1
 	fi
 
@@ -225,44 +225,45 @@ _spoofer_set_prop(){
 
 
 	# CaptivePortal (some varint app can ignore it)
-	echo "settings put global captive_portal_user_agent \"${UA}\"" | su -
-	echo "settings put system captive_portal_user_agent  \"${UA}\"" | su -
+	echo "settings put global captive_portal_user_agent \"${UA}\"" | su - | tee -a "${logfile}"
+	echo "settings put system captive_portal_user_agent  \"${UA}\"" | su - | tee -a "${logfile}"
 
 	# Hostname (some systems does not allow to alter it)
-	echo "settings put global device_name \"${model}\"" | su -
-	echo "settings put secure bluetooth_name \"${model}\"" | su -
+	echo "settings put global device_name \"${model}\"" | su - | tee -a "${logfile}"
+	echo "settings put secure bluetooth_name \"${model}\"" | su - | tee -a "${logfile}"
 
 	# Dalvik User-Agent
 	# can be only altered by hook or modified app
 
 	# WebView (spoofs only dynamic values)
 	# e.g: Mozilla/5.0 (Linux; Android 16; Redmi Note 13 5G Build/QW2P.431870.000; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.90 Mobile Safari/537.36
-	resetprop "ro.build.version.release" "${release}"
-	resetprop "ro.product.model" "${model}"
-	resetprop "ro.build.id" "${build}"
+	resetprop "ro.build.version.release" "${release}" | tee -a "${logfile}"
+	resetprop "ro.product.model" "${model}" | tee -a "${logfile}"
+	resetprop "ro.build.id" "${build}" | tee -a "${logfile}"
 
-	echo "spoofing props completed !"
+	echo "spoofing props completed !" | tee -a "${logfile}"
 
 	return 0
 }
 
 
 _spoofer_apply_safely(){
-		local i; i=0
+		local logfile i; i=0; logfile="/data/local/tmp/hostname-spoofer.log"
 
-		echo "startting props spoofer..."
+		echo -e "\n$(date)" >>"${logfile}"
+		echo "startting props spoofer..." | tee -a "${logfile}"
 	until ([ ${i} -gt 180 ] || [ -z "$(settings get global "device_name" 2>&1 | grep -F "cmd: Can't find service:")" ]); do
-		i=$((i+1)); echo "error: settings service not ready yet (${i})."
+		i=$((i+1)); echo "error: settings service not ready yet (${i})." | tee -a "${logfile}"
 		sleep 1
 	done
 
 	if [ ${i} -le 180 ]; then
 		_spoofer_get_prop
 		_spoofer_set_prop
-		echo "hostname-spoofer succedd within: ${i} seconds."
+		echo "hostname-spoofer succedd within: ${i} seconds." | tee -a "${logfile}"
 		return 0
 	else
-		echo "error: hostname-spoofer ended with errors."
+		echo "error: hostname-spoofer ended with errors." | tee -a "${logfile}"
 		return 1
 	fi
 
