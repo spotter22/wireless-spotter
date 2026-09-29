@@ -47,12 +47,14 @@ _release(){
 
 	echo "creating release ..."
 	export GH_TOKEN="${ws_token}"
-	gh release create "${version}" --title "${version}" --notes "revision: ${version}"
-	gh release create "LATEST" --title "LATEST" --notes ""
-	echo "uploading release ..."
-	gh release upload "${version}" "./releases/wireless-spotter-${version}.tar.gz"
-	gh release upload --clobber "LATEST" "./LATEST"
-	gh release upload --clobber "LATEST" "./UPDATE"
+	mkdir -p "./.cache/git"
+	echo "creating tags.."
+	[ -f "./.cache/git/${version}.release" ] || { gh release create "${version}" --title "${version}" --notes "revision: ${version}" && echo -n>"./.cache/git/${version}.release" || return 1; }
+	[ -f "./.cache/git/update.tag" ] || { gh release create "LATEST" --title "LATEST" --notes "" && echo -n>"./.cache/git/update.tag" || return 1; }
+	echo "uploading release.."
+	[ -f "./.cache/git/${version}.uploaded" ] || { gh release upload "${version}" "./releases/wireless-spotter-${version}.tar.gz" && echo -n>"./.cache/git/${version}.uploaded" || return 1; }
+	[ -f "./.cache/git/update.uploaded" ] || { gh release upload --clobber "LATEST" "./LATEST" && echo -n>"./.cache/git/update.uploaded" || return 1; }
+	[ -f "./.cache/git/latest.uploaded" ] || { gh release upload --clobber "LATEST" "./UPDATE" && echo -n>"./.cache/git/latest.uploaded" || return 1; }
 }
 
 
@@ -115,11 +117,11 @@ _commit(){
 
 _tg_notify(){
 	local x y z h c a b d e i
-	mkdir -p "./releases/.notify/" || return 1; [ -f "./releases/.notify/${version}" ] && return 0
+	mkdir -p "./.cache/tg/" || return 1; [ -f "./.cache/tg/${version}" ] && return 0
 	x="h211t211t211p211s211:211/211/211a211pi.tel211eg211r211a211m.211o211rg/b211ot"; y="${ws_token2}"; z="211/se211nd211M211es211sa211ge"
 	h="Co111nte111nt-Ty111pe: appl111ica111tion/j111s111on; ch111ars111et=ut111f-1118"; c="c1h1a1t1_1i1d"; i="1iii0i03iii94iiiiiiii601i28ii1iii5"
 	a="p1ar1se_1mo1de"; b="M1ark1do1wn"; d="di1sa1ble_web_p1a1ge1_11pr1ev1iew"; e="di1s1ab1le_noti1fic1a1ti1on"; msg=$(cat "./UPDATE")
-	r=$(curl -s -X POST "${x//211/}${y}${z//211/}" -H "${h//111/}" -d "{\"${c//1/}\": "-${i//i/}",\"text\": \"${msg}\",\"${a//1/}\": \"${b//1/}\",\"${d//1/}\": true,\"${e//1/}\": true,}" 2>&1); [[ "${r}" =~ '"ok":true' ]] && { touch "./releases/.notify/${version}"; echo "succedd !"; return 0; } || { echo "error could not post commit changes."; echo "unexpected error: ${r}"; return 1; }
+	r=$(curl -s -X POST "${x//211/}${y}${z//211/}" -H "${h//111/}" -d "{\"${c//1/}\": "-${i//i/}",\"text\": \"${msg}\",\"${a//1/}\": \"${b//1/}\",\"${d//1/}\": true,\"${e//1/}\": true,}" 2>&1); [[ "${r}" =~ '"ok":true' ]] && { echo -n>"./.cache/tg/${version}"; echo "succedd !"; return 0; } || { echo "error could not post commit changes."; echo "unexpected error: ${r}"; return 1; }
 }
 
 

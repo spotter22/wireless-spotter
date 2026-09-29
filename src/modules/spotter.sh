@@ -34,7 +34,7 @@ _spotter_return_db_measure(){
 	ret[0]=$(find "${db_root}" -type f -name "*.points" -exec cat {} + | tr "\n" " " | wc -w)
 	ret[1]=$(find "${db_root}" -type f -name "*.list" -exec cat {} + | tr "\n" " " | wc -w)
 	ret[2]=$(find "${db_root}" -type f -name "*.state1" -exec cat {} + | tr "\n" " " | wc -w)
-	ret[3]=$(find "${db_root}" -type f -name "*.state[32]" -exec cat {} + | tr "\n" " " | wc -w)
+	ret[3]=$(find "${db_root}" -type f -name "*.state[25]" -exec cat {} + | tr "\n" " " | wc -w)
 	return 0
 }
 

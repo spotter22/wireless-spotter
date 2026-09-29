@@ -1,3 +1,6 @@
+- wspot v1.0.8 changelog:
+1. [poster:] enhanced releases uploader.
+2. [wspot:] few minor fixes.
 - wspot v1.0.7 changelog:
 1. [exploit-1:] fixed issue when parsing binary status.
 2. [exploit-1:] reconstructed blacklist logic.

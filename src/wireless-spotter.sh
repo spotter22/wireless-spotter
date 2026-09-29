@@ -361,8 +361,8 @@ _spotter_main_spotwifi(){
 		i=1
 	while true; do
 			_sprint_message "--------------------------------------------------\nSession: ${i} | Time: $(date "+%c")\n--------------------------------------------------"
-			_spotter_main_getwifi "scan-parse"; err=${?}
-			[ ${err} -eq 0 ] && { t=0; i=$((i+1)); } || { [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; }
+			until _spotter_main_getwifi "scan-parse"; do err=${?}; [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; done
+			t=0; i=$((i+1))
 		for x in ${array_index[@]}; do
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }; [ ${t} -ge ${tries} ] && break || t=$((t+1))
