@@ -1,3 +1,12 @@
+- wspot v1.0.7 changelog:
+1. [exploit-1:] fixed issue when parsing binary status.
+2. [exploit-1:] reconstructed blacklist logic.
+3. [iproute-parser:] added lease time parser.
+4. [wspot:] increased reconnect tries into 10 attempts.
+5. [wspot:] changed network spotting algorithm.
+6. [wspot:] fixed some issues with target-wifi option.
+7. [connection-status:] added tries option into reconnect function.
+8. [hostname-spoofer:] added alternative shuf utility.
 - wspot v1.0.6 changelog:
 1. [wspot:] enhanced macsposed option.
 2. [connection-status:] fixed issue with iwselect.

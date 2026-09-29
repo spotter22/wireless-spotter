@@ -214,3 +214,16 @@ _ipv6neighbor_parser(){
 	return ${err}
 }
 
+_udhcpc_getlease(){
+	edevip=0; egateip=0; elease=0
+	local iface prefix result arr
+	[ -n "${1}" ] && iface="${1}" || iface="wlan0"
+	[ -n "${2}" ] && prefix="${2}" || prefix="${PREFIX}/bin"
+	_sprint_message "Getting lease-time information.."
+	result=$(su -c 'command -v udhcpc || { echo "ERR1"; exit 1; }; '${prefix}'/timeout -k3 3 udhcpc -i '${iface}' 2>&1 || { err="${?}"; echo ERR2; exit ${err}; }')
+	[[ "${result}" =~ "lease time" ]] || { [[ "${result}" =~ "udhcpc: started" ]] && { _print_verbose "_udhcpc_getlease: error could not read lease time: ${result}"; return 2; } || { _print_verbose "_udhcpc_getlease: unexpected error occurred: ${result}"; return 1; }; }
+	arr=($(echo "${result}" | grep -F "lease time")); [ "${arr[0]}" = "udhcpc:" ] || { _print_verbose "_udhcpc_getlease: error expected \"udhcpc:\" but got: ${arr[0]}"; return 3; }; [ "${arr[8]}" = "time" ] || { _print_verbose "_udhcpc_getlease: error expected \"time\" but got: ${arr[8]}"; return 4; }
+	edevip="${arr[3]}"; egateip="${arr[6]}"; elease="${arr[9]}"; egateip="${egateip/,/}"
+	return 0
+}
+

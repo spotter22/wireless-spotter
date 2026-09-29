@@ -13,6 +13,7 @@ gid.points = list of bssid
 gid.state0 = active (tried and it work)
 gid.state1 = inactive (tried but didnt work)
 gid.state2 = gateway (checked and its gw)
-gid.state3 = blacklisted (tried but its reserved)
+gid.state3 = blacklisted (discontinued since v1.0.6) (tried but its reserved)
 gid.state4 = whitelisted (tried and it has no limits)
+gid.state5 = blacklisted (introduced since v1.0.7) (tried but its reserved)
 ```

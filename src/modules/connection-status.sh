@@ -269,20 +269,21 @@ _connection_interface_getinfo(){
 
 
 _connection_interface_reconnect(){
-	local mode state state2 addr iface prefix
+	local mode tries state state2 addr iface prefix
 	[ -z "${1}" ] && mode="0" || mode="${1}"
-	[ -z "${2}" ] && state="./disconnect.tmp" || state="${2}"
-	[ -z "${3}" ] && state2="./setaddr.tmp" || state2="${3}"
-	[ -z "${4}" ] && addr="--random" || addr="${4}"
-	[ -z "${5}" ] && iface="wlan0" || iface="${5}"
-	[ -z "${6}" ] && prefix="${PREFIX}/bin" || prefix="${6}"
+	[ -z "${2}" ] && tries="3" || tries="${2}"
+	[ -z "${3}" ] && state="./disconnect.tmp" || state="${3}"
+	[ -z "${4}" ] && state2="./setaddr.tmp" || state2="${4}"
+	[ -z "${5}" ] && addr="--random" || addr="${5}"
+	[ -z "${6}" ] && iface="wlan0" || iface="${6}"
+	[ -z "${7}" ] && prefix="${PREFIX}/bin" || prefix="${7}"
 
 	[ ${mode} -eq 2 ] || { _connection_interface_getinfo "${iface}" "${prefix}"; err=${?}; }
 	[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; err=${?}; }
 
 	if [ ${err} -eq 0 ] || [ ${mode} -eq 2 ]; then
 		_connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}
-		_connection_interface_connect "${ssid}" "${sec}" "3" "${iface}" "${prefix}" || return ${?}
+		_connection_interface_connect "${ssid}" "${sec}" "${tries}" "${iface}" "${prefix}" || return ${?}
 	fi
 		return ${err}
 }

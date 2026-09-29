@@ -9,11 +9,17 @@ _spoofer_get_prop(){
 	echo "getting valid props..." | tee -a "${logfile}"
 	UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.32 Safari/537.36"
 
-	if [ "$(shuf -e "test")" != "test" ]; then
+	if command -v "shuf" >/dev/null; then
+		echo "using shuf utility.." | tee -a "${logfile}"
+	elif command -v "awk" >/dev/null && command -v "sort" >/dev/null; then
+		echo "using alternative shuf.."
+		shuf(){ awk 'BEGIN {srand(); OFMT="%.17f"} {print rand(), $0}' "$@" | sort -k1,1n | awk '{print $2}'; }
+	else
 		unset mode release build
 		echo "error: can not execute shuf utility." | tee -a "${logfile}"
 		return 1
 	fi
+
 
 	props="\
 00CN_1_270 SG1 7.1.1 SHARP SG1 
