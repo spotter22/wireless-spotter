@@ -224,6 +224,7 @@ _udhcpc_getlease(){
 	[[ "${result}" =~ "lease time" ]] || { [[ "${result}" =~ "udhcpc: started" ]] && { _print_verbose "_udhcpc_getlease: error could not read lease time: ${result}"; return 2; } || { _print_verbose "_udhcpc_getlease: unexpected error occurred: ${result}"; return 1; }; }
 	arr=($(echo "${result}" | grep -F "lease time")); [ "${arr[0]}" = "udhcpc:" ] || { _print_verbose "_udhcpc_getlease: error expected \"udhcpc:\" but got: ${arr[0]}"; return 3; }; [ "${arr[8]}" = "time" ] || { _print_verbose "_udhcpc_getlease: error expected \"time\" but got: ${arr[8]}"; return 4; }
 	edevip="${arr[3]}"; egateip="${arr[6]}"; elease="${arr[9]}"; egateip="${egateip/,/}"
+	_print_verbose "_udhcpc_getlease: parsing lease time succeed (ret: ${edevip} ${egateip} ${elease})."
 	return 0
 }
 

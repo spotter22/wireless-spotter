@@ -1,3 +1,6 @@
+- wspot v1.0.9 changelog:
+1. [exploit-1:] fixed a issue with index message.
+2. [302-parser:] fixed a issue with binary response.
 - wspot v1.0.8 changelog:
 1. [poster:] enhanced releases uploader.
 2. [wspot:] few minor fixes.

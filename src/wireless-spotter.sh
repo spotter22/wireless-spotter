@@ -35,6 +35,9 @@ Main options:
   Run selected exploit
    Options:
     1 = bruteforce clients
+   Environment Variables:
+    wspot_exploit1_testall=1
+    allows to continue bruteforcing until list ends.
 
 -d <string>
   Backup, restore or share your database.

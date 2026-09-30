@@ -122,7 +122,7 @@ _302parser_parse_resources(){
 			list+=" ${index}/${x}"
 		fi
 			_VAR_IMMUTABLE_EXCLUDE_RESOURCES+=" ${x}"
-	done < <(cat "${input}" | grep -ao '"[^"]\+"' | tr -d '"' | grep -E "\.[a-zA-Z0-9]{2,3}$" | sed 's|^/||g' | sort | uniq)
+	done < <(cat "${input}" | grep -ao '"[^"]\+"' | tr -d '"' | grep -Ea "\.[a-zA-Z0-9]{2,3}$" | sed 's|^/||g' | sort | uniq)
 
 	if [ -n "${list}" ]; then
 		_print_verbose "_302parser_parse_resources: parsing success (ret: ${list})."
@@ -239,7 +239,7 @@ _302parser_filter_strings(){
 
 
 _302parser_parse_digits(){
-	grep -Eo "\
+	grep -Eao "\
 [0-9]{5,15}\
 |\([0-9]-[0-9]{3}\) [0-9]{5}\
 |\([0-9]-[0-9][0-9][0-9]\) [0-9][0-9][0-9][0-9][0-9]\
@@ -313,7 +313,7 @@ _302parser_parse_gid(){
 		return 1
 	else
 
-			gid[1]=$(cat "${input}" | _302parser_parse_strings | tr '\r\n' '.')
+			gid[1]=$(cat "${input}" | _302parser_parse_strings | tr '\r\n' '.' | tr -d '\0')
 		if [ -n "${gid[1]}" ]; then
 			_print_verbose "_302parser_parse_gid: parsing success (ret: ${gid[1]})."
 		else
@@ -326,7 +326,7 @@ _302parser_parse_gid(){
 		else
 			_print_verbose "_302parser_parse_gid: parsing failed (ret: ${gid[2]})."
 		fi
-				
+
 			gid[1]=$(cat "${input}" | _302parser_parse_strings | _302parser_parse_digits | sort | uniq | tr '\r\n' '.')
 		if [ -n "${gid[1]}" ]; then
 			_print_verbose "_302parser_parse_gid: filtering success (ret: ${gid[1]})."
