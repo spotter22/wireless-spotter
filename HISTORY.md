@@ -1,3 +1,6 @@
+- wspot v1.0.10 changelog:
+1. [iproute-parser:] fixed depends issue with lease-time parser.
+2. [reporter:] enhanced uploader to use cid + switched to new domain.
 - wspot v1.0.9 changelog:
 1. [exploit-1:] fixed a issue with index message.
 2. [302-parser:] fixed a issue with binary response.

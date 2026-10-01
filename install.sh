@@ -28,7 +28,7 @@
 											if [ -n "${TERMUX_VERSION}" ]; then
 													deps[0]="clang automake autoconf"
 													deps[1]="libnet libpcap"
-													deps[2]="git gh openssl-tool sudo play-audio jq wget curl espeak"
+													deps[2]="git gh openssl-tool sudo play-audio jq wget curl espeak busybox"
 													deps[3]="iproute2 iptables iw arp-scan tcpdump tshark socat macchanger"
 													echo "checking required packages..."
 												for p in ${deps[@]}; do
