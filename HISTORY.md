@@ -1,3 +1,6 @@
+- wspot v1.0.12 changelog:
+1. [connection-status:] fixed disconnect interface compatibility check.
+2. [connection-status:] fixed setaddr interface compatibility check.
 - wspot v1.0.11 changelog:
 1. [wspot:] adjusted target-wifi option for more accuracy.
 

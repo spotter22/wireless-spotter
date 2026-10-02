@@ -3,7 +3,7 @@
 
 _version(){
 		commit=$(git rev-parse --short HEAD)
-		version=$(cat "./LATEST")
+		version=$(cat "./UPDATE" | awk '{print $3}' | sed -n 1p)
 	if [ -z "${commit}" ]; then
 		echo "Error: could not obtain current commit"
 		read -p "Are you going to reboot again (Y/N)?:" option
@@ -15,7 +15,10 @@ _version(){
 
 		echo -e "Version: ${version}\nCommit: ${commit}"
 		read -p "Do you want to continue (y/n)?:" option
-	if ! [[ "${option}" =~ (Y|y) ]]; then
+	if [[ "${option}" =~ (Y|y) ]]; then
+		echo "${version}" >"./LATEST"
+		return 0
+	else
 		return 1
 	fi
 }

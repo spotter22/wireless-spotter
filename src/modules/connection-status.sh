@@ -371,13 +371,13 @@ _connection_interface_disconnect(){
 	fi
 
 	# note: `iw disconnect` will always return success when device is not connected into network,
-	# and when device is connected to certain network it's can return either "operation not permitted" or success.
+	# and when device is connected to certain network it's can return either "Operation not permitted" or success.
 
 	_disconnect(){
 		if [ ${1} -eq 2 ]; then
 			result=$(su -c 'local x y; y=$('${prefix}'/iw dev '${iface}' info | grep "ssid" | sed "s/.*ssid //"); [ -z "${y}" ] && exit 0; y=$(echo -e "${y}"); '${prefix}'/cmd wifi list-networks | grep "${y}" | awk '\''{print $1}'\'' | while read x; do echo "_connection_interface_disconnect: removing network with id: ${x}"; '${prefix}'/cmd wifi forget-network ${x} >/dev/null 2>&1; done' | tr '\n' '#')
 		elif [ ${1} -eq 1 ]; then
-			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/iw dev '${iface}' disconnect; done; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
+			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/iw dev '${iface}' disconnect 2>&1; done; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
 		fi
 		if [[ "${result}" =~ "No such device" ]]; then
 			_print_verbose "_connection_interface_disconnect: error invalid interface: ${iface} (ret: ${result})."
@@ -385,7 +385,7 @@ _connection_interface_disconnect(){
 		elif [[ "${result}" =~ "Network is down" ]]; then
 			_print_verbose "_connection_interface_disconnect: error interface is down (ret: ${result})."
 			return 23
-		elif [[ "${result}" =~ "operation not permitted" ]]; then
+		elif [[ "${result}" =~ "Operation not permitted" ]]; then
 			_print_verbose "_connection_interface_disconnect: error disconnect failed (ret: ${result})."
 			return 22
 		elif [[ "${result}" =~ "ERROR" ]]; then
@@ -474,13 +474,12 @@ _connection_interface_reset()
 _connection_interface_setaddr(){
 	ret=0; PREV_ADDR="${PREV_ADDR:-0}"
 	local addr state iface prefix method result err
-	[ -z "${1}" ] && addr="--random" || addr="${1}"
+	[ -z "${1}" ] && addr="--random" || addr="${1^^}"
 	[ -z "${2}" ] && state="./setaddr.tmp" || state="${2}"
 	[ -z "${3}" ] && iface="wlan0" || iface="${3}"
 	[ -z "${4}" ] && prefix="${PREFIX}/bin" || prefix="${4}"
 
 	if [ -x "${state}" ] && [[ "${addr:0:2}" =~ (1|3|5|7|9|B|D|F) ]]; then
-		_print_message "Warning, address begins with odd chars."
 		_print_verbose "_connection_interface_setaddr: warning interface does not allow setting address begins with odd chars: ${addr}"
 		return 5
 	elif [ -s "${state}" ]; then
@@ -503,7 +502,7 @@ _connection_interface_setaddr(){
 		fi
 
 			# 2, 5, 8
-		if [[ "${result[@]}" =~ "Usage:" ]]; then
+		if [[ "${result[@]}" =~ "Invalid argument" ]]; then
 			_print_verbose "_connection_interface_setaddr: error failed setting address begins with odd char: ${2} (ret: ${result[@]})."
 			return 5
 		elif [[ "${result[@]}" =~ "No such device" ]]; then
@@ -539,10 +538,6 @@ _connection_interface_setaddr(){
 		_connection_interface_state "up" "${iface}" "${prefix}" || return ${?}
 	}
 
-	_validate_odd_addr(){
-		[[ "${addr:0:2}" =~ (1|3|5|7|9|B|D|F) ]] && return 0 || return 1
-	}
-
 
 	if [ ${method} -eq 2 ]; then
 		_down; _setaddr "${addr}"; err=${?}; _up
@@ -567,7 +562,7 @@ _connection_interface_setaddr(){
 			_setaddr "${addr}"
 			return 0
 		elif [ ${err} -eq 5 ]; then
-			_validate_odd_addr && { _setaddr "${addr}"; echo -n>"${state}"; chmod +x "${state}"; return 0; }
+			_setaddr "${addr}"; echo -n>"${state}"; chmod +x "${state}"; return 0
 			_print_message "Fatal, status code is 5."
 			_print_verbose "_connection_interface_setaddr: unexpected status code: 5"
 			return 5
@@ -578,7 +573,7 @@ _connection_interface_setaddr(){
 			_setaddr "11:11:11:11:11:11"; err=${?}
 			_up
 			[ ${err} -eq 0 ] && echo >"${state}" && return 0
-			[ ${err} -eq 5 ] && _validate_odd_addr && echo >"${state}" && chmod +x "${state}" && return 0
+			[ ${err} -eq 5 ] && echo >"${state}" && chmod +x "${state}" && return 0
  			_print_message "Fatal, status code is 2."
  			return 3
 		else
