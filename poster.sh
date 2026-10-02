@@ -45,7 +45,6 @@ _release(){
 		echo "Warning release already exists: ./releases/wireless-spotter-${version}.tar.gz"
 	fi
 
-	echo "creating release ..."
 	export GH_TOKEN="${ws_token}"
 	mkdir -p "./.cache/git"
 	echo "creating tags.."
@@ -53,8 +52,8 @@ _release(){
 	[ -f "./.cache/git/update.tag" ] || { gh release create "LATEST" --title "LATEST" --notes "" && echo -n>"./.cache/git/update.tag" || return 1; }
 	echo "uploading release.."
 	[ -f "./.cache/git/${version}.uploaded" ] || { gh release upload "${version}" "./releases/wireless-spotter-${version}.tar.gz" && echo -n>"./.cache/git/${version}.uploaded" || return 1; }
-	[ -f "./.cache/git/update.uploaded" ] || { gh release upload --clobber "LATEST" "./LATEST" && echo -n>"./.cache/git/update.uploaded" || return 1; }
-	[ -f "./.cache/git/latest.uploaded" ] || { gh release upload --clobber "LATEST" "./UPDATE" && echo -n>"./.cache/git/latest.uploaded" || return 1; }
+	[ -f "./.cache/git/${version}.update" ] || { gh release upload --clobber "LATEST" "./LATEST" && echo -n>"./.cache/git/${version}.update" || return 1; }
+	[ -f "./.cache/git/${version}.latest" ] || { gh release upload --clobber "LATEST" "./UPDATE" && echo -n>"./.cache/git/${version}.latest" || return 1; }
 }
 
 

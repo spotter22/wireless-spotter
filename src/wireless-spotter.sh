@@ -273,7 +273,7 @@ _spotter_main_optadvance(){
 
 
 _spotter_main_targetwifi(){
-	local target_index target option nskip list err x i; option="${1}"
+	local target_index target option nskip list tries err x i; option="${1}"
 
 	if [ "${option}" = "target-open-wifi" ]; then
 		option=1
@@ -290,7 +290,7 @@ _spotter_main_targetwifi(){
 		return 1
 	fi
 
-		i=1
+		t=0; i=1; tries=1
 	while true; do
 			[ ${option} -eq 2 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi that matches..\nMatch string: ${target}\nRemaining matches: ${target_index}\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
 			[ ${option} -eq 1 ] && _sprint_message "--------------------------------------------------\nSearching for a Wi-Fi with free internet access..\nCurrent scan attempt: ${i}\nTime: $(date "+%c")\n--------------------------------------------------"
@@ -302,13 +302,13 @@ _spotter_main_targetwifi(){
 			([ ${option} -eq 2 ] && [ ${target_index} -eq 0 ]) && return 0
 			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
 			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ ${target,,} ]] || [[ "${bssid,,}" = ${target,,} ]]) && { target_index=$((target_index-1)); _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "found"; } || continue; }
+			[ ${t} -ge ${tries} ] && break || t=$((t+1))
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			_connection_interface_connect "${ssid}" "${sec}" "1" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}"; continue; }
 			_spotter_main_getinfo || { err=${?}; [ ${option} -eq 2 ] && { _notify_message "failed"; }; ([ ${option} -eq 1 ] && [ ${err} -eq 4 ]) && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "found"; } || continue; }
 			_spotter_main_scanwifi "3" "0"
 			list+=" ${bssid}"
 		done
-		sleep 3
 	done
 }
 

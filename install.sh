@@ -132,6 +132,7 @@
 
 											termux-open-url "https://t.me/wspotter22"
 											echo "Installation completed !"
+											return 0
 										}
 						_process_ufetch()
 										{
