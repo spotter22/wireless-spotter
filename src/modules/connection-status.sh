@@ -495,7 +495,7 @@ _connection_interface_setaddr(){
 	fi
 
 	_setaddr(){
-		if [ "${1}" = "--random" ]; then
+		if [ "${1,,}" = "--random" ]; then
 			result=($(su -c ''${prefix}'/macchanger -r '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
 		else
 			result=($(su -c ''${prefix}'/macchanger -m '${1}' '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
@@ -545,14 +545,14 @@ _connection_interface_setaddr(){
 		[ ${err} -eq 4 ] && return 4
 		[ ${err} -eq 2 ] && return 2
 		mv "${state}" "$(mktemp)"
-		return ${?}
+		return ${err}
 	elif [ ${method} -eq 1 ]; then
 		_setaddr "${addr}"; err=${?}
 		[ ${err} -eq 0 ] && return 0
 		[ ${err} -eq 4 ] && return 4
 		[ ${err} -eq 2 ] && return 2
 		mv "${state}" "$(mktemp)"
-		return ${?}
+		return ${err}
 	elif [ ${method} -eq 0 ]; then
 		_print_message "Testing, interface compatibility.."
 		_print_verbose "_connection_interface_setaddr: testing interface.."
