@@ -220,8 +220,8 @@ _udhcpc_getlease(){
 	[ -n "${1}" ] && iface="${1}" || iface="wlan0"
 	[ -n "${2}" ] && prefix="${2}" || prefix="${PREFIX}/bin"
 	_sprint_message "Getting lease-time information.."
-	result=$(su -c 'local bb; bb=$(command -v busybox || command -v '${prefix}'/busybox || echo ERR1); [ "${bb}" = "ERR1" ] && { echo "ERR1"; exit 1; }; '${prefix}'/timeout -k3 3 ${bb} udhcpc -i '${iface}' 2>&1 || { err="${?}"; echo ERR2; exit ${err}; }')
-	[[ "${result}" =~ "lease time" ]] || { [[ "${result}" =~ "udhcpc: started" ]] && { _print_verbose "_udhcpc_getlease: error could not read lease time: ${result}"; return 3; }; [[ "${result}" =~ "ERR1" ]] && { _print_verbose "_udhcpc_getlease: error busybox is not found"; _sprint_message "Fatal, busybox is not installed."; return 2; } || { _print_verbose "_udhcpc_getlease: unexpected error occurred: ${result}"; return 1; }; }
+	result=$(su -c ''${prefix}'/timeout -k3 3 '${prefix}'/busybox udhcpc -i '${iface}' 2>&1 || { err="${?}"; echo ERR2; exit ${err}; }')
+	[[ "${result}" =~ "lease time" ]] || { _print_verbose "_udhcpc_getlease: error could not read lease time: ${result}"; return 3; }
 	arr=($(echo "${result}" | grep -F "lease time")); [ "${arr[0]}" = "udhcpc:" ] || { _print_verbose "_udhcpc_getlease: error expected \"udhcpc:\" but got: ${arr[0]}"; return 3; }; [ "${arr[8]}" = "time" ] || { _print_verbose "_udhcpc_getlease: error expected \"time\" but got: ${arr[8]}"; return 4; }
 	edevip="${arr[3]}"; egateip="${arr[6]}"; elease="${arr[9]}"; egateip="${egateip/,/}"
 	_print_verbose "_udhcpc_getlease: parsing lease time succeed (ret: ${edevip} ${egateip} ${elease})."

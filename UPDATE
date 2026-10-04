@@ -1,3 +1,4 @@
-- wspot v1.0.13 changelog:
-1. [connection-status:] fixed return code status on setaddr function.
-2. [exploit-1:] added new exception from setaddr.
+- wspot v1.0.14 changelog:
+1. [exploit-1:] improved blacklist success rate.
+2. [iproute-parser:] fixed lease-time prefix issue.
+3. [wspot:] fixed issue in target-wifi option.

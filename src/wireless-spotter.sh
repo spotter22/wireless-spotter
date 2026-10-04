@@ -298,11 +298,11 @@ _spotter_main_targetwifi(){
 			[ ${err} -eq 0 ] && i=$((i+1)) || { [ ${err} -eq 3 ] && { _notify_message "failed"; return ${err}; } || { sleep 0.5; continue; }; }
 		for x in ${array_index[@]}; do
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
-			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping already-check network: ${ssid}"; continue; }
+			[ ${t} -ge ${tries} ] && break; [[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping already-check network: ${ssid}"; continue; }
 			([ ${option} -eq 2 ] && [ ${target_index} -eq 0 ]) && return 0
 			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
 			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ ${target,,} ]] || [[ "${bssid,,}" = ${target,,} ]]) && { target_index=$((target_index-1)); _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "found"; } || continue; }
-			[ ${t} -ge ${tries} ] && break || t=$((t+1))
+			[ ${t} -ge ${tries} ] || t=$((t+1))
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			_connection_interface_connect "${ssid}" "${sec}" "1" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}"; continue; }
 			_spotter_main_getinfo || { err=${?}; [ ${option} -eq 2 ] && { _notify_message "failed"; }; ([ ${option} -eq 1 ] && [ ${err} -eq 4 ]) && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "found"; } || continue; }
