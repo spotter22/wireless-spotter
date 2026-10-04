@@ -371,7 +371,7 @@ _spotter_main_spotwifi(){
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }; [ ${t} -ge ${tries} ] && break || t=$((t+1))
 			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			_connection_interface_connect "${ssid}" "${sec}" "1" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}"; continue; }
-			_spotter_main_getinfo || continue
+			_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] || return ${err}; }
 			_spotter_main_scanwifi "3" "0"
 			list+=" ${bssid}"
 		done

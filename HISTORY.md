@@ -1,3 +1,5 @@
+- wspot v1.0.15 changelog:
+1. [wspot:] fixed issue with index in network spotter.
 - wspot v1.0.14 changelog:
 1. [exploit-1:] improved blacklist success rate.
 2. [iproute-parser:] fixed lease-time prefix issue.
