@@ -42,10 +42,11 @@ Main options:
 -d <string>
   Backup, restore or share your database.
    Options:
-    measure = measure database
-    backup = backup database
-    restore = restore database
-    share = share database
+    measure = measure local database
+    backup = backup local database
+    restore = restore local database
+    share = share local database
+    fetch = fetch online database
 
 -a <string>
   Advance options, target, reset or keep Wi-Fi.
@@ -213,9 +214,12 @@ _spotter_main_optdb(){
 	elif [ "${option}" = "b" ]; then
 		_database_merger_save "--backup"
 	elif [ "${option}" = "r" ]; then
-		_database_merger_find "/sdcard/Download/"
+		_database_merger_correctname "${spotter_root}/tmp/gc2"
+		_database_merger_find "/sdcard/Download/" "${spotter_root}/tmp/gc2"
 	elif [ "${option}" = "s" ]; then
 		_database_merger_save "--share"
+	elif [ "${option}" = "f" ]; then
+		_database_merger_gc2 "download"
 	fi
 }
 
