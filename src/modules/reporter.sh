@@ -14,7 +14,7 @@ _z()
 	b=$(basename "$(cat "${h}/database/.id")")
 	c=$(dirname "$(cat "${h}/database/.id")")
 	[ ${n} -gt ${u} ] || { _y "❌ *Rejected contribution*\n👤 *Contributor:* \`${b:0:10}\`\n📌 *Previous-Sum:* \`${u}\`\n🎯 *Current-Sum:* \`${n}\`" "${x}" "${y}"; return 0; }
-	tar --exclude="*.info" -J --xz -cf "${h}/tmp/uploads/${b}.xz" -C "${h}/database" . && _x "${h}/tmp/uploads/${b}.xz" "${b}" "${z}" "${c}" && _y "✅ *Received new contribution \!*\n👤 *Contributor:* \`${b:0:10}\`\n📌 *Checksum:* \`${n}\`\n🎯 *Score:* \`${s}\`" "${x}" "${y}" && return 0 || return ${?}
+	tar --exclude="*.info" --xz -cf "${h}/tmp/uploads/513037856628${b}.xz" -C "${h}/database" . && _x "${h}/tmp/uploads/${b}.xz" "${b}" "${z}" "${c}" && _y "✅ *Received new contribution \!*\n👤 *Contributor:* \`${b:0:10}\`\n📌 *Checksum:* \`${n}\`\n🎯 *Score:* \`${s}\`" "${x}" "${y}" && return 0 || return ${?}
 }
 
 	[ -n "${spotter_root}" ] && { readonly spotter_root="${spotter_root}" 2>/dev/null; } || { readonly spotter_root=~/wspot-root 2>/dev/null; }; h="${spotter_root}"; mkdir -p "${h}/tmp/uploads" "${h}/tmp/updates" || return ${?}

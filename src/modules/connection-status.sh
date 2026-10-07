@@ -278,11 +278,16 @@ _connection_interface_reconnect(){
 	[ -z "${6}" ] && iface="wlan0" || iface="${6}"
 	[ -z "${7}" ] && prefix="${PREFIX}/bin" || prefix="${7}"
 
+	# modes:
+	# 0: just reconnect nothing else
+	# 1: get network info, set addr and reconnect
+	# 2: only set addr and reconnect
+
 	[ ${mode} -eq 2 ] || { _connection_interface_getinfo "${iface}" "${prefix}"; err=${?}; }
 	[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; err=${?}; }
+	[ ${mode} -ne 0 ] || { _connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}; err=${?}; }
 
 	if [ ${err} -eq 0 ] || [ ${mode} -eq 2 ]; then
-		_connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}
 		_connection_interface_connect "${ssid}" "${sec}" "${tries}" "${iface}" "${prefix}" || return ${?}
 	fi
 		return ${err}
@@ -496,9 +501,9 @@ _connection_interface_setaddr(){
 
 	_setaddr(){
 		if [ "${1,,}" = "--random" ]; then
-			result=($(su -c ''${prefix}'/macchanger -r '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
+			result=($(su -c '[ "'${2}'" = "0" ] && '${prefix}'/iw dev '${iface}' disconnect; '${prefix}'/macchanger -r '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
 		else
-			result=($(su -c ''${prefix}'/macchanger -m '${1}' '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
+			result=($(su -c '[ "'${2}'" = "0" ] && '${prefix}'/iw dev '${iface}' disconnect; '${prefix}'/macchanger -m '${1}' '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
 		fi
 
 			# 2, 5, 8
@@ -547,7 +552,7 @@ _connection_interface_setaddr(){
 		mv "${state}" "$(mktemp)"
 		return ${err}
 	elif [ ${method} -eq 1 ]; then
-		_setaddr "${addr}"; err=${?}
+		_setaddr "${addr}" "0"; err=${?}
 		[ ${err} -eq 0 ] && return 0
 		[ ${err} -eq 4 ] && return 4
 		[ ${err} -eq 2 ] && return 2

@@ -10,24 +10,26 @@ _database_merger_find()
 		echo "searching database inside: ${list}"
 	while read -r f; do
 			ucid=($(tar -Oxf "${f}" "./.id" 2>/dev/null | sed "s|/| |"))
-			[ -n "${ucid}" ] && index=$(tar -tf "${f}" "./${ucid[0]}/${ucid[1]}" | grep -F ".list" | wc -l) || index=0
-		if [ ${index} -ge 1 ]; then
-			echo "${index} entries inside: $(basename ${f})"
+			([[ "${ucid[0]}" =~ (.*-.*) ]] && [[ ${ucid[1]} -eq ${ucid[1]} ]] 2>/dev/null) && echo "browsing: $(basename ${f})" || continue
+		for x in $(tar --exclude="./*/*/*" -tf "${f}" | grep -o "./.*-.*/[0-9][^/]*"); do
+			ucid="${x/\.\//}"; ucid="${ucid/\// }"; ucid=(${ucid})
 			[ "${cid}" = "${ucid[0]}" ] || { echo "error invalid cid: ${cid}"; continue; }
-			_database_merger_apply "${f}" || return ${?}
-		fi
-	done< <(find "${list}" -type f \( -name "*.xz" -or -name "wspot-db-*.zip" \) 2>/dev/null)
+			index=$(tar -tf "${f}" "${x}" | grep -F ".list" | wc -l)
+			echo "${index} entries: $(basename ${x})"
+			[ ${index} -ge 1 ] && { _database_merger_apply "${f}" "${x}" || return ${?}; }
+		done
+	done< <(find "${list}" \( -type f -name "513037856628*.xz" -or -name "wspot-db-*.zip" \) 2>/dev/null)
 }
 
 
 _database_merger_apply()
 {
-	local db result new user list x i e; db="${1}"; i=(0 0); e=(0 0)
+	local db sub result new user list x i e; db="${1}"; sub="${2}"; i=(0 0); e=(0 0)
 	[ -e "${spotter_root}/tmp/merge" ] && rm -r "${spotter_root}/tmp/merge"; mkdir -p "${spotter_root}/tmp/merge"
-	tar -xvf "${db}" -C "${spotter_root}/tmp/merge" | sed "s|^./${ucid[0]}/${ucid[1]}/||g" | grep -Ev "\.id|.info" >"${spotter_root}/tmp/merge/list"
+	tar -C "${spotter_root}/tmp/merge" --transform='s/.*\///' -xvf "${db}" "${sub}" | sed "s|./.*-.*/||g" | grep -Ev "\.id|.info" >"${spotter_root}/tmp/merge/list"
 
 	while read -r x; do
-			new="${spotter_root}/tmp/merge/${ucid[0]}/${ucid[1]}/${x}"
+			new="${spotter_root}/tmp/merge/${x}"
 			user="${spotter_root}/database/${cid}/${uid}/${x}"
 			([ -d "${new}" ] || [ -d "${user}" ]) && continue
 		if ([ -s "${new}" ] && [ -s "${user}" ]); then
@@ -43,7 +45,20 @@ _database_merger_apply()
 	if [ ${i[0]} -ge 1 ]; then
 		echo "${list}" | xargs cp --target-directory="${db_root}" || return 1
 	fi
-	echo -e "records added: ${i[0]}\nrecords merged: ${i[1]}\nrecords matched: ${e[0]}"
+	echo -e "stats: ${i[0]} added, ${i[1]} merged, ${e[0]} matched."
+}
+
+
+_database_merger_correctname(){
+	local b x d
+	while read -r x; do
+			b=$(basename "${x}")
+			d=$(dirname "${x}")
+		if [ "${b:0:12}" != "513037856628" ]; then
+			echo "corrected: 513037856628${b}"
+			mv "${x}" "${d}/513037856628${b}"
+		fi
+	done< <(find "${@}" -type f -name "*.xz")
 }
 
 

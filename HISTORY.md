@@ -1,3 +1,6 @@
+- wspot v1.0.16 changelog:
+1. [connection-status:] fixed an issue with reconnect function were incorrect disconnect causes delays.
+2. [merge-database:] extended database range + added uniq filename identifier.
 - wspot v1.0.15 changelog:
 1. [wspot:] fixed issue with index in network spotter.
 - wspot v1.0.14 changelog:
