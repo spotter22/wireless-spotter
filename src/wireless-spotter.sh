@@ -89,6 +89,11 @@ Main options:
      saved networks with open security and removing
      the cookies of captive-portal apps.
 
+    get-info = Get current Network information
+     parses and prints all possible network
+     information such as Gateway-IP or Server's
+     domain addresss.
+
     keep-selected-wifi = Keeps connection of selected
      Wi-Fi network. helps in preventing sudden
      disconnect when you are away from your device.
@@ -125,6 +130,16 @@ _notify_message(){
 			{ sleep 1; play-audio "${spotter_root}/sfx/notification_condition0.m4a"; } &
 		fi
 	fi
+}
+
+_spotter_main_colors(){
+	unset colrst colerr colsuc colwrn colopa colopb
+	colrst='\033[0m'
+	colerr='\033[1;91m'
+	colsuc='\033[0;92m'
+	colwrn='\033[1;93m'
+	colopa='\033[1;95m'
+	colopb='\033[1;96m'
 }
 
 _spotter_main_config(){
@@ -252,6 +267,9 @@ _spotter_main_optadvance(){
 		_spotter_main_targetwifi "${option}"
 	elif [ "${option}" = "reset-wifi" ]; then
 		_connection_interface_reset "2" "${src}/modules/hostname-spoofer.sh"
+	elif [ "${option}" = "get-info" ]; then
+		_spotter_main_colors; _spotter_main_getinfo || return ${?}
+		_sprint_message "Interface: ${colopb}${iwface}${colrst} ${colopa}${devip}${colrst} ${colwrn}${iwaddr}${colrst}\nNetwork: ${colwrn}${iwssid}${colrst} ${colerr}(${iwfreq:0:1}G)${colrst} ${colwrn}${iwbssid}${colrst}\nStatus: ${colopb}${domain/\/index.html/}/${status/\//}${colrst}\nGateway: ${colopa}${gateip}${colrst} ${colopa}${route}${colrst} ${colwrn}${gaddr}${colrst}"
 	elif [ "${option}" = "keep-selected-wifi" ]; then
 		_spotter_main_getwifi "scan-select" || return ${?}
 		_iproute2iw_parse_auto "${iface}" || return ${?}
@@ -395,8 +413,9 @@ _spotter_main_getwifi(){
 
 
 _spotter_main_getinfo(){
+	local response
 	_iproute2iw_parse_auto "${iface}" || return ${?}
-	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/response.log"; err=${?}; [ ${err} -eq 0 ] || return ${err}; }
+	_spotter_get_bssid_info "${iwbssid}" "$(date +%m%d%y)" && return 0 || { mkdir -p "${spotter_root}/tmp/302"; response="response_$(date +%s).log"; _print_verbose "_spotter_main_getinfo: generated response file: ${response}"; _302parser_parse_auto "http://google.com" "${spotter_root}/tmp/302/${response}"; err=${?}; [ ${err} -eq 0 ] || return ${err}; }
 	_spotter_put_bssid_info "${iwbssid}" "${iwssid}" "${iwfreq}" "${sec}" "${gateip}" "${gaddr}" "${route}" "${gid}" "${domain}" "${host}" "${port}" "${status}" "$(date +%m%d%y)"
 	_spotter_put_gid_state "${gid}" "state2" "${gaddr}"
 	return 0

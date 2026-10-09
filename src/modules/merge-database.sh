@@ -26,9 +26,10 @@ _database_merger_find()
 
 _database_merger_apply()
 {
-	local db sub result new user list x i e; db="${1}"; sub="${2}"; i=(0 0); e=(0 0)
+	local db sub result new user list tmp x i e; db="${1}"; sub="${2}"; i=(0 0); e=(0 0)
 	[ -e "${spotter_root}/tmp/merge" ] && rm -r "${spotter_root}/tmp/merge"; mkdir -p "${spotter_root}/tmp/merge"
 	tar -C "${spotter_root}/tmp/merge" --transform='s/.*\///' -xvf "${db}" "${sub}" | sed "s|./.*-.*/||g" | grep -Ev "\.id|.info" >"${spotter_root}/tmp/merge/list"
+	tmp="${spotter_root}/tmp/merge/result"
 
 	while read -r x; do
 			new="${spotter_root}/tmp/merge/${x}"
@@ -37,7 +38,8 @@ _database_merger_apply()
 		if ([ -s "${new}" ] && [ -s "${user}" ]); then
 			result=($(stat -c%s "${new}" "${user}"))
 			[ ${result[0]} -ne "${result[1]}" ] && i[1]=$((i[1]+1)) || { e[0]=$((e[0]+1)); continue; }
-			cat "${new}" "${user}" | sort -u >"${user}" || return 1
+			cat "${new}" "${user}" | sort -u >"${tmp}" || return ${?}
+			cat "${tmp}" >"${user}" || return ${?}
 		elif ([ -s "${new}" ] && [ ! -s "${user}" ]); then
 			i[0]=$((i[0]+1))
 			list+="${new} "

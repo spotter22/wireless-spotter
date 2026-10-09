@@ -1,3 +1,4 @@
-- wspot v1.0.17 changelog:
-1. [merge-database:] added garbage collector function.
-2. [wspot:] added fetch option into database options.
+- wspot v1.0.18 changelog:
+1. [merge-database:] fixed critical issue were merged records gets unexpectedly lost.
+2. [wspot:] improved getinfo function debug by adding archived response.
+3. [wspot:] added get-info option into advanced options.
