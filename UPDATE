@@ -1,4 +1,4 @@
-- wspot v1.0.18 changelog:
-1. [merge-database:] fixed critical issue were merged records gets unexpectedly lost.
-2. [wspot:] improved getinfo function debug by adding archived response.
-3. [wspot:] added get-info option into advanced options.
+- wspot v1.0.19 changelog:
+1. [connection-status:] fixed critical issue in disconnect function.
+2. [connection-status:] added alternative disconnect method.
+3. [connection-status:] some other fixes in setaddr and disconnect functions.

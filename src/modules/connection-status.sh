@@ -283,12 +283,16 @@ _connection_interface_reconnect(){
 	# 1: get network info, set addr and reconnect
 	# 2: only set addr and reconnect
 
+	_print_verbose "_connection_interface_reconnect: trying to reconnect with mode: ${mode}"
 	[ ${mode} -eq 2 ] || { _connection_interface_getinfo "${iface}" "${prefix}"; err=${?}; }
-	[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; err=${?}; }
-	[ ${mode} -ne 0 ] || { _connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}; err=${?}; }
+	[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; }
 
-	if [ ${err} -eq 0 ] || [ ${mode} -eq 2 ]; then
+	if [ -z ${err} ] || [ ${err} -eq 0 ]; then
+		_connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}
 		_connection_interface_connect "${ssid}" "${sec}" "${tries}" "${iface}" "${prefix}" || return ${?}
+		_print_verbose "_connection_interface_reconnect: success finished."
+	else
+		_print_verbose "_connection_interface_reconnect: error getinfo failed: ${err}"
 	fi
 		return ${err}
 }
@@ -363,7 +367,9 @@ _connection_interface_disconnect(){
 	[ -z "${2}" ] && iface="wlan0" || iface="${2}"
 	[ -z "${3}" ] && prefix="${PREFIX}/bin" || prefix="${3}"
 
-	if [ -s "${state}" ]; then
+	if [ -x "${state}" ]; then
+		method=3
+	elif [ -s "${state}" ]; then
 		method=2
 	elif [ -f "${state}" ]; then
 		method=1
@@ -379,8 +385,10 @@ _connection_interface_disconnect(){
 	# and when device is connected to certain network it's can return either "Operation not permitted" or success.
 
 	_disconnect(){
-		if [ ${1} -eq 2 ]; then
+		if [ ${1} -eq 3 ]; then
 			result=$(su -c 'local x y; y=$('${prefix}'/iw dev '${iface}' info | grep "ssid" | sed "s/.*ssid //"); [ -z "${y}" ] && exit 0; y=$(echo -e "${y}"); '${prefix}'/cmd wifi list-networks | grep "${y}" | awk '\''{print $1}'\'' | while read x; do echo "_connection_interface_disconnect: removing network with id: ${x}"; '${prefix}'/cmd wifi forget-network ${x} >/dev/null 2>&1; done' | tr '\n' '#')
+		elif [ ${1} -eq 2 ]; then
+			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/ip link set dev '${iface}' down 2>&1; done; '${prefix}'/ip link set dev '${iface}' up 2>&1; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
 		elif [ ${1} -eq 1 ]; then
 			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/iw dev '${iface}' disconnect 2>&1; done; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
 		fi
@@ -402,7 +410,10 @@ _connection_interface_disconnect(){
 		fi
 	}
 
-	if [ ${method} -eq 2 ]; then
+	if [ ${method} -eq 3 ]; then
+		_disconnect "3" && return 0
+		mv "${state}" "$(mktemp)"
+	elif [ ${method} -eq 2 ]; then
 		_disconnect "2" && return 0
 		mv "${state}" "$(mktemp)"
 	elif [ ${method} -eq 1 ]; then
@@ -501,9 +512,9 @@ _connection_interface_setaddr(){
 
 	_setaddr(){
 		if [ "${1,,}" = "--random" ]; then
-			result=($(su -c '[ "'${2}'" = "0" ] && '${prefix}'/iw dev '${iface}' disconnect; '${prefix}'/macchanger -r '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
+			result=($(su -c ''${prefix}'/macchanger -r '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
 		else
-			result=($(su -c '[ "'${2}'" = "0" ] && '${prefix}'/iw dev '${iface}' disconnect; '${prefix}'/macchanger -m '${1}' '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
+			result=($(su -c ''${prefix}'/macchanger -m '${1}' '${iface}' 2>&1 | '${prefix}'/sed "s|([^)]*)||g" 2>&1'))
 		fi
 
 			# 2, 5, 8
@@ -552,7 +563,7 @@ _connection_interface_setaddr(){
 		mv "${state}" "$(mktemp)"
 		return ${err}
 	elif [ ${method} -eq 1 ]; then
-		_setaddr "${addr}" "0"; err=${?}
+		_setaddr "${addr}"; err=${?}
 		[ ${err} -eq 0 ] && return 0
 		[ ${err} -eq 4 ] && return 4
 		[ ${err} -eq 2 ] && return 2
