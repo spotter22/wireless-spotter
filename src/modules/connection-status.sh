@@ -269,7 +269,7 @@ _connection_interface_getinfo(){
 
 
 _connection_interface_reconnect(){
-	local mode tries state state2 addr iface prefix
+	local mode tries state state2 addr iface prefix err
 	[ -z "${1}" ] && mode="0" || mode="${1}"
 	[ -z "${2}" ] && tries="3" || tries="${2}"
 	[ -z "${3}" ] && state="./disconnect.tmp" || state="${3}"

@@ -1,3 +1,5 @@
+- wspot v1.0.20 changelog:
+1. [connection-status:] fixed issue in disconnect function.
 - wspot v1.0.19 changelog:
 1. [connection-status:] fixed critical issue in disconnect function.
 2. [connection-status:] added alternative disconnect method.
