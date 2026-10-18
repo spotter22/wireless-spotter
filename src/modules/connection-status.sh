@@ -388,9 +388,9 @@ _connection_interface_disconnect(){
 		if [ ${1} -eq 3 ]; then
 			result=$(su -c 'local x y; y=$('${prefix}'/iw dev '${iface}' info | grep "ssid" | sed "s/.*ssid //"); [ -z "${y}" ] && exit 0; y=$(echo -e "${y}"); '${prefix}'/cmd wifi list-networks | grep "${y}" | awk '\''{print $1}'\'' | while read x; do echo "_connection_interface_disconnect: removing network with id: ${x}"; '${prefix}'/cmd wifi forget-network ${x} >/dev/null 2>&1; done' | tr '\n' '#')
 		elif [ ${1} -eq 2 ]; then
-			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/ip link set dev '${iface}' down 2>&1; done; '${prefix}'/ip link set dev '${iface}' up 2>&1; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
+			result=$(su -c 'local i y; i=0; y=0; until ([ -z "${y}" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/ip link set dev '${iface}' down 2>&1; y=$('${prefix}'/ip n 2>&1); done; '${prefix}'/ip link set dev '${iface}' up 2>&1; [ ${i} -ge 10 ] && echo "ERROR: ${y}" 2>&1' | tr '\n' '#')
 		elif [ ${1} -eq 1 ]; then
-			result=$(su -c 'local i; i=0; until ([ -z "$('${prefix}'/ip n)" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/iw dev '${iface}' disconnect 2>&1; done; [ ${i} -ge 10 ] && echo "ERROR" 2>&1' | tr '\n' '#')
+			result=$(su -c 'local i y; i=0; y=0; until ([ -z "${y}" ] || [ ${i} -ge 10 ]); do i=$((i+1)); echo "_connection_interface_disconnect: disconnecting from wifi attempt: ${i}"; '${prefix}'/iw dev '${iface}' disconnect 2>&1; y=$('${prefix}'/ip n 2>&1); done; [ ${i} -ge 10 ] && echo "ERROR: ${y}" 2>&1' | tr '\n' '#')
 		fi
 		if [[ "${result}" =~ "No such device" ]]; then
 			_print_verbose "_connection_interface_disconnect: error invalid interface: ${iface} (ret: ${result})."
