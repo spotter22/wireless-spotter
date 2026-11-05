@@ -137,8 +137,8 @@
 						_process_ufetch()
 										{
 													local link_main link_alt latest filename
-													link_main="https://raw.githubusercontent.com/spotter22/wireless-spotter/refs/heads/main/UPDATE.md"
-													link_alt="https://github.com/spotter22/wireless-spotter/releases/download/LATEST/UPDATE.md"
+													link_main="https://raw.githubusercontent.com/spotter22/wireless-spotter/refs/heads/main/LATEST"
+													link_alt="https://github.com/spotter22/wireless-spotter/releases/download/LATEST/LATEST"
 													mkdir -p "${spotter_root}/tmp/updates/"
 
 												if [ ! -s "${spotter_root}/.version" ] && [ "${1}" = "--silent" ]; then

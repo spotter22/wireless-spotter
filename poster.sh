@@ -3,7 +3,7 @@
 
 _version(){
 		commit=$(git rev-parse --short HEAD)
-		version="v$(cat "./UPDATE.md" | awk '{print $3}' | sed -n 1p)"
+		version="v$(cat "./CHANGES.md" | awk '{print $3}' | sed -n 1p)"
 	if [ -z "${commit}" ]; then
 		echo "Error: could not obtain current commit"
 		read -p "Are you going to reboot again (Y/N)?:" option
@@ -47,16 +47,24 @@ _release(){
 		echo "Warning release already exists: ./releases/wireless-spotter-${version}.tar.gz"
 	fi
 
+	_u(){
+		if [ -s "./.cache/git/releases/${2}.tag" ]; then
+			return 0
+		else
+			echo "uploading ${2} into ${1}"
+			gh release upload --clobber "${1}" "${2}" && echo -n>"./.cache/git/${2}.tag"
+		fi
+	}
+
 	export GH_TOKEN="${ws_token}"
-	mkdir -p "./.cache/git/tags" "./.cache/git/releases" "./.cache/git/legacy"
-	echo "creating tag.."
-	[ -f "./.cache/git/tags/${version}.tag" ] || { gh release create "${version}" --title "${version}" --notes "$(cat ./UPDATE.md)" && echo -n>"./.cache/git/tags/${version}.tag" || return 1; }
+	mkdir -p "./.cache/git/tags" "./.cache/git/releases"
+	echo "creating tags.."
+	[ -f "./.cache/git/tags/${version}.tag" ] || { gh release create "${version}" --title "${version}" --notes "$(cat ./CHANGES.md)" && echo -n>"./.cache/git/tags/${version}.tag" || return 1; }
 	[ -f "./.cache/git/tags/LATEST" ] || { gh release create "LATEST" --title "LATEST" --notes "LATEST" && echo -n>"./.cache/git/tags/LATEST" || return 1; }
-	echo "uploading release.."
-	[ -f "./.cache/git/releases/${version}.tag" ] || { gh release upload "${version}" "./releases/wireless-spotter-${version}.tar.gz" && echo -n>"./.cache/git/releases/${version}.tag" || return 1; }
-	[ -f "./.cache/git/releases/${version}.log" ] || { gh release upload --clobber "LATEST" "./UPDATE.md" && echo -n>"./.cache/git/releases/${version}.log" || return 1; }
-	[ -f "./.cache/git/legacy/${version}-latest.tag" ] || { gh release upload --clobber "LATEST" "./LATEST" && echo -n>"./.cache/git/legacy/${version}-latest.tag" || return 1; }
-	[ -f "./.cache/git/legacy/${version}-update.tag" ] || { gh release upload --clobber "LATEST" "./UPDATE" && echo -n>"./.cache/git/legacy/${version}-update.tag" || return 1; }
+	_u "${version}" "./releases/wireless-spotter-${version}.tar.gz"
+	_u "LATEST" "./LATEST"
+	_u "LATEST" "./UPDATE.md" # legacy
+	_u "LATEST" "./UPDATE" # legacy
 }
 
 
@@ -82,11 +90,11 @@ _commit(){
 			[[ "${option}" =~ (Y|y) ]] || return 1
 		fi
 		if [[ "${status}" =~ "modified:" ]]; then
-			if [ ! -s "./UPDATE.md" ] || [[ ! "${status}" =~ "UPDATE.md" ]]; then
-				echo "New changes must be written into: ./UPDATE.md"
+			if [ ! -s "./CHANGES.md" ] || [[ ! "${status}" =~ "CHANGES.md" ]]; then
+				echo "New changes must be written into: ./CHANGES.md"
 				return 1
-			elif [[ "${status}" =~ "UPDATE.md" ]]; then
-				cat "./UPDATE.md"
+			elif [[ "${status}" =~ "CHANGES.md" ]]; then
+				cat "./CHANGES.md"
 				read -p "Your changes looks like this, continue (y/n)?" option
 				[[ "${option}" =~ (Y|y) ]] || return 1
 			fi
@@ -95,14 +103,15 @@ _commit(){
 
 	if [ "${commit}" = "initial" ] || [ "$(git log -n1 --oneline | awk '{print $3}')" != "${version}" ]; then	
 		echo "commiting changes ..."
-		echo "${version}" >"./LATEST" # legacy
+		echo "${version}" >"./LATEST"
+		echo "${version}" >"./UPDATE.md" # legacy
 		echo "${version}" >"./UPDATE" # legacy
 		[ "${commit}" = "initial" ] && git init
 		[ "${commit}" = "initial" ] && git remote add origin "https://github.com/${ws_contributor}/wireless-spotter"
 		git add .
 		git config user.email "${ws_email}"
 		git config user.name "${ws_contributor}"
-		git commit --author="${ws_contributor} <${ws_email}>" -m "$(cat "./UPDATE.md")"
+		git commit --author="${ws_contributor} <${ws_email}>" -m "$(cat "./CHANGES.md")"
 	fi
 		echo "pushing changes ..."
 		git push "https://${ws_contributor}:${ws_token}@github.com/${ws_contributor}/wireless-spotter.git" main
@@ -118,7 +127,7 @@ _tg_notify(){
 	var1="111ch111at1111_i111d11111111"; var2="ri222ch_22me2222ss22222age22222"
 	var3="m3333ar333k3333do3333w333333n"; var4="C4ont4ent4-T4ype4: appli4cat4ion/j44s4o4n4444"
 	var5="5ht5tp5s5:5/5/a5p5i.t5el5eg5ra5m5.o5r5g/b5o5t5"; var6="6s6end6Ric6hMe6ss6ag6e6"
-	result=$(curl -X POST "${var5//5/}${ws_token2}/${var6//6/}" -H "${var4//4/}" -d "{\"${var1//1/}\": \"-1003946012815\",\"${var2//2/}\": {\"${var3//3/}\": \"$(cat "./UPDATE.md" | sed "s|\`|\\\\\`|g; s|#|\\\#|g; s|/|\\\/|g")\"}}")
+	result=$(curl -X POST "${var5//5/}${ws_token2}/${var6//6/}" -H "${var4//4/}" -d "{\"${var1//1/}\": \"-1003946012815\",\"${var2//2/}\": {\"${var3//3/}\": \"$(cat "./CHANGES.md" | sed "s|\`|\\\\\`|g; s|#|\\\#|g; s|/|\\\/|g")\"}}")
 	[[ "${result}" =~ '"ok":true' ]] && { echo -n>"./.cache/tg/${version}.tag"; echo "posting changelog: succeed"; return 0; } || { echo "posting changelog: failed"; echo "reason: ${result}"; return 1; }
 }
 
