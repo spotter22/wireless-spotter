@@ -441,7 +441,7 @@ _connection_interface_disconnect(){
 
 
 _connection_interface_state(){
-	ret=0; DOWN_STATE="${DOWN_STATE:-0}"
+	DOWN_STATE="${DOWN_STATE:-0}"
 	local mode iface prefix result
 	[ -z "${1}" ] && mode="up" || mode="${1}"
 	[ -z "${2}" ] && iface="wlan0" || iface="${2}"

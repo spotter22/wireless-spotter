@@ -97,7 +97,7 @@
 										{
 											cd "${current_dir}"
 											echo "copying wireless-spotter files..."
-											cp -R "./src/modules/" "./src/exploits/" "./src/sfx/" "./src/wireless-spotter.sh" "./LICENSE" "./HISTORY.md" "${spotter_root}/" || exit 1
+											cp -R "./src/modules/" "./src/exploits/" "./src/sfx/" "./src/wireless-spotter.sh" "./LICENSE" "${spotter_root}/" || exit 1
 											cp "./install.sh" "${spotter_root}/modules/updater.sh"
 											echo "${version}" >"${spotter_root}/.version"
 
