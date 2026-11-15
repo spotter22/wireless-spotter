@@ -196,9 +196,14 @@ _connection_interface_iwscan(){
 
 
 _connection_interface_getpsk(){
-	psk=0
+	psk=0; PREV_PSK="${PREV_PSK:-0}"
 	local ssid result pskstore
 	[ -z "${1}" ] && unset ssid || ssid="${1}"
+
+	if [  "${PREV_PSK}" != "0" ]; then
+		psk="${PREV_PSK}"
+		return 0
+	fi
 
 	_print_verbose "_connection_interface_getpsk: parsing network psk: ${ssid}"
 	pskstore[0]="/data/misc/apexdata/com.android.wifi/WifiConfigStore.xml"
@@ -208,6 +213,7 @@ _connection_interface_getpsk(){
 
 	if [ -n "${psk}" ]; then
 		_print_verbose "_connection_interface_getpsk: parsing success (ret: ${psk})."
+		PREV_PSK="${psk}"
 		return 0
 	else
 		_print_verbose "_connection_interface_getpsk: error parsing failed (ret: 0)."
@@ -285,10 +291,10 @@ _connection_interface_reconnect(){
 
 	_print_verbose "_connection_interface_reconnect: trying to reconnect with mode: ${mode}"
 	[ ${mode} -eq 2 ] || { _connection_interface_getinfo "${iface}" "${prefix}"; err=${?}; }
-	[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; }
 
 	if [ -z ${err} ] || [ ${err} -eq 0 ]; then
 		_connection_interface_disconnect "${state}" "${iface}" "${prefix}" || return ${?}
+		[ ${mode} -eq 0 ] || { _connection_interface_setaddr "${addr}" "${state2}" || return ${?}; }
 		_connection_interface_connect "${ssid}" "${sec}" "${tries}" "${iface}" "${prefix}" || return ${?}
 		_print_verbose "_connection_interface_reconnect: success finished."
 	else
@@ -323,6 +329,7 @@ _connection_interface_connect(){
 	[[ "${ssid}" =~ "&" ]] && ssid="${ssid//\&/\\&}"
 	[[ "${ssid}" =~ "|" ]] && ssid="${ssid//\|/\\|}"
 	[[ "${ssid}" =~ "#" ]] && ssid="${ssid//\#/\\#}"
+	[[ "${ssid}" =~ "\`" ]] && ssid="${ssid//\`/\\\`}"
 	if [[ "${ssid:0:1}" =~ (\") ]] && [[ "${ssid: -1}" =~ (\") ]]; then
 		ssid="${ssid:1:-1}"
 	fi
@@ -347,7 +354,7 @@ _connection_interface_connect(){
 
 	# Ref: https://unix.stackexchange.com/a/792827
 
-	result=$(su -c 'local i c t wait; i=0; t=0; until ([ -n "$('${prefix}'/ip n | grep -E "REACHABLE|STALE|DELAY|PROBE|PERMANENT")" ] || [ ${i} -gt '${tries}' ]); do [ "${wait}" = "yes" ] && { c=$((c+1)); [ ${c} -ge 30 ] && wait="no"; t=$((t+1)); sleep 0.1; continue; } || { c=0; }; echo "_connection_interface_connect: connecting into wifi attempt: ${i}"; '${prefix}'/cmd wifi connect-network '${ssid}' '${sec}' -d; wait="yes"; i=$((i+1)); done; [ ${i} -gt '${tries}' ] && echo "ERROR"; echo "finished with: $((t/10)) seconds" 2>&1' | tr '\n' '#')
+	result=$(su -c "local i c t y wait; i=0; t=0; unset y; until ([ -n \"\${y}\" ] || [ \${i} -gt ${tries} ]); do [ \"\${wait}\" = \"yes\" ] && { c=\$((c+1)); [ \${c} -ge 30 ] && wait=\"no\"; t=\$((t+1)); sleep 0.1; y=\"\$(${prefix}/ip n | grep -E \"REACHABLE|STALE|DELAY|PROBE|PERMANENT\")\"; continue; } || { c=0; }; echo \"_connection_interface_connect: connecting into wifi attempt: \${i}\"; ${prefix}/cmd wifi connect-network ${ssid} ${sec} -d; wait=\"yes\"; i=\$((i+1)); done; [ \${i} -gt ${tries} ] && echo \"ERROR\"; echo \"finished with: \$((t/10)) seconds\" 2>&1" | tr '\n' '#')
 
 	if [[ "${result}" =~ (ERROR) ]]; then
 		_print_message "Failed, could not connect into network."

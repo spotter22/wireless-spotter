@@ -326,7 +326,6 @@ _spotter_main_targetwifi(){
 			[ ${option} -eq 1 ] && _spotter_return_gid_status "${bssid}" && { _sprint_message "Skipping captive-portal network: ${ssid}"; list+=" ${bssid}"; continue; }
 			[ ${option} -eq 2 ] && { ([[ "${ssid,,}" =~ ${target,,} ]] || [[ "${bssid,,}" = ${target,,} ]]) && { target_index=$((target_index-1)); _sprint_message "Succeed, Target \"${target}\" matches \"SSID=${ssid}\" or \"BSSID=${bssid}\"."; _notify_message "found"; } || continue; }
 			[ ${t} -ge ${tries} ] || t=$((t+1))
-			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			_connection_interface_connect "${ssid}" "${sec}" "1" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}"; continue; }
 			_spotter_main_getinfo || { err=${?}; [ ${option} -eq 2 ] && { _notify_message "failed"; }; ([ ${option} -eq 1 ] && [ ${err} -eq 4 ]) && { _sprint_message "Succeed, \"SSID=${ssid}\" \"BSSID=${bssid}\" has free internet access."; _notify_message "found"; } || continue; }
 			_spotter_main_scanwifi "3" "0"
@@ -392,7 +391,6 @@ _spotter_main_spotwifi(){
 		for x in ${array_index[@]}; do
 			ssid="${array_ssid[${x}]}"; bssid="${array_addr[${x}]}"; sec="${array_sec[${x}]}"
 			[[ "${list}" =~ "${bssid}" ]] && { _sprint_message "Skipping: ${ssid}"; continue; }; [ ${t} -ge ${tries} ] && break || t=$((t+1))
-			_connection_interface_disconnect "${spotter_root}/tmp/disconnect.state"
 			_connection_interface_connect "${ssid}" "${sec}" "1" || { err=${?}; [ ${err} -eq 12 ] && list+=" ${bssid}"; continue; }
 			_spotter_main_getinfo || { err=${?}; [ ${err} -eq 4 ] || continue; }
 			_spotter_main_scanwifi "3" "0"
@@ -408,7 +406,7 @@ _spotter_main_getwifi(){
 	if [ "${1}" = "scan-parse" ]; then
 		_connection_interface_iwscan "${iface}" "--scan-parse" "${spotter_root}/tmp/iwscan.log" "${spotter_root}/tmp/iwscan.json" || return ${?}
 	elif [ "${1}" = "scan-select" ]; then
-		_connection_interface_getinfo || { _connection_interface_iwscan "${iface}" "--scan-select" "${spotter_root}/tmp/iwscan.log" "${spotter_root}/tmp/iwscan.json" && _connection_interface_disconnect "${spotter_root}/tmp/disconnect.state" && _connection_interface_connect "${ssid}" "${sec}" || return ${?}; }
+		_connection_interface_getinfo || { _connection_interface_iwscan "${iface}" "--scan-select" "${spotter_root}/tmp/iwscan.log" "${spotter_root}/tmp/iwscan.json" && _connection_interface_connect "${ssid}" "${sec}" || return ${?}; }
 	fi
 }
 
