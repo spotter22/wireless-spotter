@@ -122,7 +122,7 @@ _302parser_parse_resources(){
 			list+=" ${index}/${x}"
 		fi
 			_VAR_IMMUTABLE_EXCLUDE_RESOURCES+=" ${x}"
-	done < <(cat "${input}" | grep -ao '"[^"]\+"' | tr -d '"' | grep -Ea "\.[a-zA-Z0-9]{2,3}$" | sed 's|^/||g' | sort | uniq)
+	done < <(cat "${input}" | grep -Pao "<.*script.*src=\K[^ \>]*" | tr -d '"' | grep -Ea "\.[a-zA-Z0-9]{2,3}$" | sed 's|^/||g' | sort | uniq)
 
 	if [ -n "${list}" ]; then
 		_print_verbose "_302parser_parse_resources: parsing success (ret: ${list})."
@@ -375,6 +375,7 @@ _302parser_parse_auto(){
 		return 1
 	fi
 
+		unset _VAR_IMMUTABLE_EXCLUDE_RESOURCES
 		_attempt=0
 	until [ ${_attempt} -ge 10 ]; do
 		_302parser_parse_resources "${output}" "curl"; result="${ret}"

@@ -1,12 +1,10 @@
-# Version 1.0.3 changes:
+# Version 1.0.4 changes:
 
 ## Whats new
 
-- migrated `_connection_interface_connect` to work with Magisk v31.1 (31100).
-- dropped disconnect requirement when connecting into networks.
+- added new script [tests/getlogs.sh](https://github.com/spotter22/wireless-spotter/blob/main/tests/getlogs.sh) for analyzing or checking logs.
 
 ## Whats fixed
 
-- improved `_connection_interface_connect` to work with SSIDs containg backticks.
-- improved `_connection_interface_getpsk` to prevent unnecessary repeated parses.
-- fixed issue in `_connection_interface_reconnect` were set address option was invoked at incorrect time.
+- improved pattern matching in `_302parser_parse_resources` by replacing previous one with new one.
+- fixed issue in `_302parser_parse_auto` by reseting result store variable on every session for `_302parser_parse_resources`.
