@@ -18,7 +18,7 @@
 												echo "Error: can not execute files within: ${spotter_root}"
 												exit 1
 											fi
-												grep -Fq "spotter_root=" ~/.profile || { echo "spotter_root=\"${spotter_root}\"" >>~/.profile && source ~/.profile || exit ${?}; }
+												grep -Fq "spotter_root=" ~/.profile 2>/dev/null || { echo "spotter_root=\"${spotter_root}\"" >>~/.profile && source ~/.profile || exit ${?}; }
 												echo "Root-Directory: ${spotter_root}"
 										}
 						_process_deps()
@@ -191,9 +191,9 @@
 						_process_uinstall()
 										{
 											if [ "${1}" = "--silent" ]; then
-												export wspot_update="updated"
+												echo >"${spotter_root}/updates/state"
 											elif [ "${1}" = "--install" ]; then
-												export wspot_update="firsttime"
+												echo -n>"${spotter_root}/updates/state"
 											else
 												return 1
 											fi

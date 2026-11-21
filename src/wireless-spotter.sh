@@ -181,9 +181,9 @@ _spotter_main_config(){
 	elif [ "${mode}" = "update" ]; then
 		${src}/modules/updater.sh --install-latest || return ${?}
 		return 0
-	elif [ -s "${src}/modules/updater.sh" ]; then
+	elif [ -x "${src}/modules/updater.sh" ]; then
 		${src}/modules/updater.sh --update-install
-		[ "${wspot_update}" = "updated" ] && return 0
+		[ -s "${spotter_root}/updates/state" ] && { echo -n>"${spotter_root}/updates/state"; return 0; }
 	fi
 
 	# logs
