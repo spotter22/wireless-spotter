@@ -25,46 +25,47 @@ _version(){
 
 _release(){
 		_version || return 1
-	if [ ! -s "./releases/wireless-spotter-${version}.tar.gz" ]; then
+	if [ ! -s "./.cache/releases/wireless-spotter-${version}.tar.gz" ]; then
 		echo "copying release files ..."
-		rm -rf "./releases/tmp/"
-		mkdir -p "./releases/tmp/src"
-		cp -r "./src/modules" "./src/exploits" "./src/sfx" "./src/wireless-spotter.sh" "./releases/tmp/src/"
-		cp "./install.sh" "./LICENSE" "./releases/tmp/"
+		rm -rf "./.cache/releases/tmp/"
+		mkdir -p "./.cache/releases/tmp/src"
+		cp -r "./src/modules" "./src/exploits" "./src/sfx" "./src/wireless-spotter.sh" "./.cache/releases/tmp/src/"
+		cp "./install.sh" "./LICENSE" "./.cache/releases/tmp/"
 
 		echo "setting release info ..."
 		sed -i "s|commit=.*|commit=\"${commit}\"|; s|version=.*|version=\"${version}\"|" \
-			"./releases/tmp/src/wireless-spotter.sh" \
-			"./releases/tmp/install.sh" \
+			"./.cache/releases/tmp/src/wireless-spotter.sh" \
+			"./.cache/releases/tmp/install.sh" \
 			|| { echo "Error: unexpected error while setting release info"; exit 1; }
 
 		echo "now packing files ..."
-		tar -czvf "./releases/wireless-spotter-${version}.tar.gz" -C "./releases/tmp/" . \
+		tar -czvf "./.cache/releases/wireless-spotter-${version}.tar.gz" -C "./.cache/releases/tmp/" . \
 			|| { echo "Error: unexpected error while packing files"; exit 1; }
 
-		echo "release: ./releases/wireless-spotter-${version}.tar.gz"
+		echo "release: ./.cache/releases/wireless-spotter-${version}.tar.gz"
 	else
-		echo "Warning release already exists: ./releases/wireless-spotter-${version}.tar.gz"
+		echo "Warning release already exists: ./.cache/releases/wireless-spotter-${version}.tar.gz"
 	fi
 
 	_u(){
-		if [ -s "./.cache/git/releases/${2}.tag" ]; then
+		if [ -e "./.cache/git/${2}" ]; then
 			return 0
 		else
-			echo "uploading ${2} into ${1}"
-			gh release upload --clobber "${1}" "${2}" && echo -n>"./.cache/git/${2}.tag"
+			echo "uploading ${3} into ${1}"
+			gh release upload --clobber "${1}" "${3}" && echo >"./.cache/git/${2}"
 		fi
 	}
 
 	export GH_TOKEN="${ws_token}"
-	mkdir -p "./.cache/git/tags" "./.cache/git/releases"
+	mkdir -p "./.cache/git"
 	echo "creating tags.."
-	[ -f "./.cache/git/tags/${version}.tag" ] || { gh release create "${version}" --title "${version}" --notes "$(cat ./CHANGES.md)" && echo -n>"./.cache/git/tags/${version}.tag" || return 1; }
-	[ -f "./.cache/git/tags/LATEST" ] || { gh release create "LATEST" --title "LATEST" --notes "LATEST" && echo -n>"./.cache/git/tags/LATEST" || return 1; }
-	_u "${version}" "./releases/wireless-spotter-${version}.tar.gz"
-	_u "LATEST" "./LATEST"
-	_u "LATEST" "./UPDATE.md" # legacy
-	_u "LATEST" "./UPDATE" # legacy
+	[ -f "./.cache/git/${version}.tag" ] || { gh release create "${version}" --title "${version}" --notes "$(cat ./CHANGES.md)" && echo >"./.cache/git/${version}.tag" || return 1; }
+	[ -f "./.cache/git/LATEST.tag" ] || { gh release create "LATEST" --title "LATEST" --notes "LATEST" && echo >"./.cache/git/LATEST.tag" || return 1; }
+	# tag stamp file
+	_u "${version}" "wspot-${version}.tag" "./.cache/releases/wireless-spotter-${version}.tar.gz"
+	_u "LATEST" "LATEST-${version}.tag" "./LATEST"
+	_u "LATEST" "UPTMD-${version}.tag" "./UPDATE.md" # legacy
+	_u "LATEST" "UPT-${version}.tag" "./UPDATE" # legacy
 }
 
 
